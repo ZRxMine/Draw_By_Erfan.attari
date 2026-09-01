@@ -131,7 +131,7 @@
         <aside class="w-72 glass-panel p-4 flex flex-col gap-5 z-20 overflow-y-auto max-h-full shadow-2xl">
             <!-- Tool Selection -->
             <div>
-                <label class="text-xs font-semibold text-gray-400 mb-2 block flex items-center justify-between">
+                <label class="text-xs font-semibold text-gray-400 mb-2 flex items-center justify-between">
                     <span>انتخاب ابزار دست</span>
                     <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
                 </label>
@@ -238,8 +238,8 @@
             </div>
 
             <!-- WebCam Live Preview Overlay PIP -->
-            <div id="webcam-container" class="hidden absolute top-4 left-4 z-30 glass-panel p-2 rounded-2xl flex-col items-center shadow-2xl border border-indigo-500/30 w-48">
-                <div class="relative w-full h-32 rounded-xl overflow-hidden bg-black/60 flex items-center justify-center">
+            <div id="webcam-container" class="hidden absolute top-4 left-4 z-30 glass-panel p-2 rounded-2xl flex-col items-center shadow-2xl border border-indigo-500/30 w-52">
+                <div class="relative w-full h-36 rounded-xl overflow-hidden bg-black/60 flex items-center justify-center">
                     <video id="webcam-video" class="w-full h-full object-cover transform -scale-x-100" playsinline></video>
                     <canvas id="webcam-canvas" class="absolute inset-0 w-full h-full transform -scale-x-100 pointer-events-none"></canvas>
                     <div id="camera-loading" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center gap-2 text-xs text-indigo-300">
@@ -251,7 +251,7 @@
                     <span id="cam-status" class="flex items-center gap-1 text-amber-400">
                         <i class="fa-solid fa-circle text-[8px]"></i> در حال دریافت...
                     </span>
-                    <span class="text-indigo-300 font-bold">AI Tracker</span>
+                    <span id="gesture-badge" class="text-purple-300 font-bold bg-purple-900/40 px-1.5 py-0.5 rounded border border-purple-500/30">دست آزاد</span>
                 </div>
             </div>
         </main>
@@ -378,23 +378,23 @@
                 this.isPressing = false;
                 this.style = 'cyber'; // cyber, neon, real
 
-                // 5 Fingers structure (Thumb, Index, Middle, Ring, Pinky)
+                // 5 Fingers structure with individual flex states
                 this.fingers = [
-                    { name: 'Thumb', baseAngle: -0.6, lengths: [35, 25], flex: 0 },
-                    { name: 'Index', baseAngle: -0.25, lengths: [45, 30, 20], flex: 0 },
+                    { name: 'Thumb', baseAngle: -0.65, lengths: [35, 25], flex: 0 },
+                    { name: 'Index', baseAngle: -0.28, lengths: [45, 30, 20], flex: 0 },
                     { name: 'Middle', baseAngle: 0.0, lengths: [50, 35, 22], flex: 0 },
-                    { name: 'Ring', baseAngle: 0.25, lengths: [45, 32, 20], flex: 0 },
-                    { name: 'Pinky', baseAngle: 0.55, lengths: [35, 25, 18], flex: 0 }
+                    { name: 'Ring', baseAngle: 0.28, lengths: [45, 32, 20], flex: 0 },
+                    { name: 'Pinky', baseAngle: 0.58, lengths: [35, 25, 18], flex: 0 }
                 ];
             }
 
-            update(targetX, targetY, isPressing, stiffness) {
+            update(targetX, targetY, isPressing, stiffness, cameraActive) {
                 this.targetX = targetX;
                 this.targetY = targetY;
                 this.isPressing = isPressing;
 
                 // Physics spring dampening for hand position
-                const k = 0.15 * (stiffness / 100);
+                const k = 0.18 * (stiffness / 100);
                 const damp = 0.72;
 
                 const ax = (this.targetX - this.x) * k;
@@ -410,15 +410,17 @@
                 const targetWristX = this.x - this.vx * 4;
                 const targetWristY = this.y + 110 - this.vy * 2;
 
-                this.wristX += (targetWristX - this.wristX) * 0.1;
-                this.wristY += (targetWristY - this.wristY) * 0.1;
+                this.wristX += (targetWristX - this.wristX) * 0.12;
+                this.wristY += (targetWristY - this.wristY) * 0.12;
 
-                // Update finger flex based on velocity & pressing
-                const pressureTarget = isPressing ? 0.8 : 0.1;
-                this.fingers.forEach((f, idx) => {
-                    const wave = Math.sin(Date.now() * 0.005 + idx) * 0.05;
-                    f.flex += (pressureTarget + wave - f.flex) * 0.2;
-                });
+                // Fallback flex calculation if camera tracking is not active
+                if (!cameraActive) {
+                    const pressureTarget = isPressing ? 0.85 : 0.05;
+                    this.fingers.forEach((f, idx) => {
+                        const wave = Math.sin(Date.now() * 0.005 + idx) * 0.03;
+                        f.flex += (pressureTarget + wave - f.flex) * 0.25;
+                    });
+                }
             }
 
             draw(ctx, activeTool, currentColor, size) {
@@ -470,7 +472,7 @@
                     ctx.fill();
                 }
 
-                // Render 5 Articulated Fingers
+                // Render 5 Articulated Fingers based on their independent flex values
                 this.fingers.forEach((finger, i) => {
                     let jointX = this.x + (i - 2) * 12;
                     let jointY = this.y + 15 + Math.abs(i - 2) * 3;
@@ -481,8 +483,9 @@
                     let currentAngle = -Math.PI / 2 + finger.baseAngle;
 
                     finger.lengths.forEach((len, j) => {
-                        const bend = finger.flex * (j + 1) * 0.35;
-                        currentAngle += bend * (i > 2 ? 0.8 : 1);
+                        // High flex = bent joints (fist/closed finger)
+                        const bend = finger.flex * (j + 1) * 0.48;
+                        currentAngle += bend * (i === 0 ? 0.6 : 1); // Thumb bends inwards
 
                         jointX += Math.cos(currentAngle) * len;
                         jointY += Math.sin(currentAngle) * len;
@@ -634,8 +637,8 @@
                 this.physicsCanvas.height = h;
 
                 if (this.camCanvas) {
-                    this.camCanvas.width = 192;
-                    this.camCanvas.height = 128;
+                    this.camCanvas.width = 208;
+                    this.camCanvas.height = 144;
                 }
 
                 if (tempCanvas) {
@@ -730,8 +733,8 @@
                     this.handsDetector.setOptions({
                         maxNumHands: 1,
                         modelComplexity: 1,
-                        minDetectionConfidence: 0.6,
-                        minTrackingConfidence: 0.6
+                        minDetectionConfidence: 0.65,
+                        minTrackingConfidence: 0.65
                     });
 
                     this.handsDetector.onResults((results) => this.onHandTrackingResults(results));
@@ -773,12 +776,14 @@
                 this.camCtx.clearRect(0, 0, this.camCanvas.width, this.camCanvas.height);
 
                 const statusEl = document.getElementById('cam-status');
+                const badgeEl = document.getElementById('gesture-badge');
 
                 if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
                     if (statusEl) {
                         statusEl.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> در انتظار دست...`;
                         statusEl.className = "flex items-center gap-1 text-amber-400";
                     }
+                    if (badgeEl) badgeEl.textContent = "دست نامشخص";
                     return;
                 }
 
@@ -791,21 +796,46 @@
 
                 this.drawLandmarksPreview(landmarks);
 
+                const wrist = landmarks[0];
                 const indexTip = landmarks[8];
                 const thumbTip = landmarks[4];
 
+                // Smooth hand position tracking
                 const rawX = (1 - indexTip.x) * window.innerWidth;
                 const rawY = indexTip.y * window.innerHeight;
 
                 this.pointerX += (rawX - this.pointerX) * 0.45;
                 this.pointerY += (rawY - this.pointerY) * 0.45;
 
+                // Sync 5 individual finger flex states (fist / individual movement)
+                this.syncPhysicsHandFlex(landmarks);
+
+                // Pinch gesture for painting trigger
                 const dx = thumbTip.x - indexTip.x;
                 const dy = thumbTip.y - indexTip.y;
                 const dz = (thumbTip.z || 0) - (indexTip.z || 0);
                 const pinchDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-                const isPinching = pinchDistance < 0.075;
+                const isPinching = pinchDistance < 0.08;
+
+                // Determine active gesture text for UI badge
+                const isFist = this.hand.fingers.every(f => f.flex > 0.65);
+                if (isFist) {
+                    if (badgeEl) {
+                        badgeEl.textContent = "مُشت کامل ✊";
+                        badgeEl.className = "text-amber-300 font-bold bg-amber-900/40 px-1.5 py-0.5 rounded border border-amber-500/30";
+                    }
+                } else if (isPinching) {
+                    if (badgeEl) {
+                        badgeEl.textContent = "نقاشی (Pinch) 👌";
+                        badgeEl.className = "text-emerald-300 font-bold bg-emerald-900/40 px-1.5 py-0.5 rounded border border-emerald-500/30";
+                    }
+                } else {
+                    if (badgeEl) {
+                        badgeEl.textContent = "دست آزاد ✋";
+                        badgeEl.className = "text-purple-300 font-bold bg-purple-900/40 px-1.5 py-0.5 rounded border border-purple-500/30";
+                    }
+                }
 
                 if (isPinching && !this.isPointerDown) {
                     if (this.activeTool === 'bucket') {
@@ -816,7 +846,6 @@
                 }
 
                 this.isPointerDown = isPinching;
-                this.syncPhysicsHandFlex(landmarks);
             }
 
             drawLandmarksPreview(landmarks) {
@@ -824,27 +853,60 @@
                 const w = this.camCanvas.width;
                 const h = this.camCanvas.height;
 
-                this.camCtx.fillStyle = '#a855f7';
-                this.camCtx.strokeStyle = '#6366f1';
-                this.camCtx.lineWidth = 2;
+                // Connect skeletal landmarks for live webcam display
+                const connections = [
+                    [0,1],[1,2],[2,3],[3,4], // Thumb
+                    [0,5],[5,6],[6,7],[7,8], // Index
+                    [0,9],[9,10],[10,11],[11,12], // Middle
+                    [0,13],[13,14],[14,15],[15,16], // Ring
+                    [0,17],[17,18],[18,19],[19,20]  // Pinky
+                ];
 
+                this.camCtx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
+                this.camCtx.lineWidth = 1.5;
+                connections.forEach(([i, j]) => {
+                    this.camCtx.beginPath();
+                    this.camCtx.moveTo(landmarks[i].x * w, landmarks[i].y * h);
+                    this.camCtx.lineTo(landmarks[j].x * w, landmarks[j].y * h);
+                    this.camCtx.stroke();
+                });
+
+                this.camCtx.fillStyle = '#a855f7';
                 landmarks.forEach((pt) => {
                     this.camCtx.beginPath();
-                    this.camCtx.arc(pt.x * w, pt.y * h, 3, 0, Math.PI * 2);
+                    this.camCtx.arc(pt.x * w, pt.y * h, 2.5, 0, Math.PI * 2);
                     this.camCtx.fill();
                 });
             }
 
             syncPhysicsHandFlex(landmarks) {
                 const wrist = landmarks[0];
-                const tips = [4, 8, 12, 16, 20];
+                const fingerTips = [4, 8, 12, 16, 20];
+                const fingerMcps = [2, 5, 9, 13, 17]; // Base joints for better accuracy
 
-                tips.forEach((tipIdx, fingerIdx) => {
+                fingerTips.forEach((tipIdx, i) => {
                     const tip = landmarks[tipIdx];
-                    const dist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
-                    const flex = Math.max(0, Math.min(1, 1 - (dist * 2.2)));
-                    if (this.hand.fingers[fingerIdx]) {
-                        this.hand.fingers[fingerIdx].flex = flex;
+                    const mcp = landmarks[fingerMcps[i]];
+
+                    // Calculate tip-to-wrist and tip-to-mcp distance
+                    const distToWrist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+                    const distToMcp = Math.hypot(tip.x - mcp.x, tip.y - mcp.y);
+
+                    // Normalize flex ratio: 1.0 = fully closed (fist), 0.0 = fully open
+                    let targetFlex = 0;
+                    if (i === 0) {
+                        // Thumb check relative to index base
+                        const indexBase = landmarks[5];
+                        const thumbDist = Math.hypot(tip.x - indexBase.x, tip.y - indexBase.y);
+                        targetFlex = Math.max(0, Math.min(1, 1 - (thumbDist * 3.2)));
+                    } else {
+                        // Other fingers: compare tip distance to palm base
+                        targetFlex = Math.max(0, Math.min(1, 1 - (distToWrist * 2.3)));
+                    }
+
+                    // Smooth transition to target flex
+                    if (this.hand.fingers[i]) {
+                        this.hand.fingers[i].flex += (targetFlex - this.hand.fingers[i].flex) * 0.35;
                     }
                 });
             }
@@ -863,7 +925,7 @@
                     }
                     if (btnCam) btnCam.classList.add('active');
                     this.initCameraTracking();
-                    if (hintText) hintText.textContent = "دوربین فعال است | چسباندن شست و اشاره = نقاشی کشیدن";
+                    if (hintText) hintText.textContent = "دوربین فعال است | انگشت‌ها و مشت واقعی دست شما روی بوم شبیه‌سازی می‌شود";
                 } else {
                     if (webcamBox) {
                         webcamBox.classList.add('hidden');
@@ -880,12 +942,14 @@
 
                 // Pointer events
                 window.addEventListener('pointermove', (e) => {
+                    if (this.isCameraActive) return; // Prioritize Camera if active
                     this.pointerX = e.clientX;
                     this.pointerY = e.clientY;
                 });
 
                 window.addEventListener('pointerdown', (e) => {
                     if (e.target.closest('aside') || e.target.closest('header')) return;
+                    if (this.isCameraActive) return;
                     this.pointerX = e.clientX;
                     this.pointerY = e.clientY;
                     this.isPointerDown = true;
@@ -898,6 +962,7 @@
                 });
 
                 window.addEventListener('pointerup', () => {
+                    if (this.isCameraActive) return;
                     if (this.isPointerDown) {
                         this.saveState();
                     }
@@ -1179,7 +1244,7 @@
             animate() {
                 this.physicsCtx.clearRect(0, 0, this.physicsCanvas.width, this.physicsCanvas.height);
 
-                this.hand.update(this.pointerX, this.pointerY, this.isPointerDown, this.stiffness);
+                this.hand.update(this.pointerX, this.pointerY, this.isPointerDown, this.stiffness, this.isCameraActive);
 
                 this.spawnParticles();
 
