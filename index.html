@@ -2,1268 +2,718 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>استودیوی نقاشی با دست فیزیکی | Physics Hand Paint Studio</title>
-    
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هوش مصنوعی صوتی - دستیار تعاملی</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- FontAwesome Icons -->
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Vazirmatn Font for Persian -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- Vazirmatn Font -->
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
-
-    <!-- MediaPipe Hands & Camera Utils for AI WebCam Hand Tracking -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-
     <style>
         * {
-            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Vazirmatn', sans-serif;
             user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
         }
 
         body {
-            background-color: #0b0f19;
-            color: #f3f4f6;
+            background-color: #080a12;
             overflow: hidden;
         }
 
-        /* Glassmorphism styling */
-        .glass-panel {
-            background: rgba(17, 24, 39, 0.85);
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.8;
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), inset 0 0 15px rgba(99, 102, 241, 0.4);
+            }
+            50% {
+                transform: scale(1.08);
+                opacity: 1;
+                box-shadow: 0 0 50px rgba(168, 85, 247, 0.9), inset 0 0 30px rgba(168, 85, 247, 0.6);
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 0.8;
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), inset 0 0 15px rgba(99, 102, 241, 0.4);
+            }
+        }
+
+        @keyframes wave-expand {
+            0% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(2.2);
+                opacity: 0;
+            }
+        }
+
+        .orb-idle {
+            animation: pulse-ring 3.5s infinite ease-in-out;
+            background: radial-gradient(circle at 35% 35%, #8b5cf6, #4f46e5, #0f172a);
+        }
+
+        .orb-listening {
+            animation: pulse-ring 1.2s infinite ease-in-out;
+            background: radial-gradient(circle at 35% 35%, #ec4899, #ef4444, #431407);
+        }
+
+        .orb-speaking {
+            animation: pulse-ring 1.8s infinite ease-in-out;
+            background: radial-gradient(circle at 35% 35%, #10b981, #06b6d4, #064e3b);
+        }
+
+        .wave-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(168, 85, 247, 0.5);
+            pointer-events: none;
+        }
+
+        .active-wave {
+            animation: wave-expand 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .glass-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-        }
-
-        .glass-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-        }
-
-        .glass-btn.active {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            border-color: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
-        }
-
-        /* Custom Scrollbars */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.2);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
-            border-radius: 4px;
-        }
-
-        /* Range Slider Styling */
-        input[type=range] {
-            accent-color: #a855f7;
-        }
-
-        canvas {
-            cursor: none; /* Hide default cursor to render physics hand */
-        }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between overflow-hidden relative">
+<body class="h-screen w-screen flex flex-col justify-between items-center relative text-white select-none">
 
-    <!-- TOP NAVBAR -->
-    <header class="h-16 glass-panel px-4 flex items-center justify-between z-30 relative shadow-xl">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                <i class="fa-solid fa-hand-sparkles text-xl text-white"></i>
-            </div>
-            <div>
-                <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300">
-                    نقاشی با دست فیزیکی
-                </h1>
-                <p class="text-xs text-gray-400">Physics Hand Paint Studio</p>
-            </div>
-        </div>
+    <canvas id="bgCanvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
 
-        <!-- Top Actions -->
-        <div class="flex items-center gap-2">
-            <!-- WebCam Control Toggle -->
-            <button id="btn-camera" class="glass-btn px-3 py-2 rounded-xl text-xs flex items-center gap-2 text-indigo-300 hover:text-indigo-200 border-indigo-500/30">
-                <i class="fa-solid fa-camera text-indigo-400"></i>
-                <span class="hidden sm:inline">کنترل با دوربین</span>
-            </button>
-            <button id="btn-sound" class="glass-btn px-3 py-2 rounded-xl text-xs flex items-center gap-2 text-gray-200">
-                <i class="fa-solid fa-volume-high text-purple-400"></i>
-                <span class="hidden sm:inline">صدا</span>
-            </button>
-            <button id="btn-clear" class="glass-btn px-3 py-2 rounded-xl text-xs flex items-center gap-2 text-red-400 hover:text-red-300">
-                <i class="fa-solid fa-trash-can"></i>
-                <span class="hidden sm:inline">پاکسازی</span>
-            </button>
-            <button id="btn-undo" class="glass-btn px-3 py-2 rounded-xl text-xs flex items-center gap-2 text-gray-200">
-                <i class="fa-solid fa-rotate-left"></i>
-                <span class="hidden sm:inline">بازگشت</span>
-            </button>
-            <button id="btn-save" class="glass-btn px-3 py-2 rounded-xl text-xs flex items-center gap-2 text-emerald-400 hover:text-emerald-300">
-                <i class="fa-solid fa-download"></i>
-                <span>ذخیره تصویر</span>
-            </button>
+    <!-- Top Header -->
+    <header class="z-10 pt-8 text-center max-w-md px-4">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-950/60 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-3 shadow-lg backdrop-blur-md">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            هوش مصنوعی صوتی تعاملی
         </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight glow-text text-white">
+            دستیار هوشمند صوتی
+        </h1>
+        <p class="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
+            فرمان‌های صوتی: <span class="text-purple-400 font-bold border-b border-purple-500/50">«سلام»</span> ، <span class="text-cyan-400 font-bold border-b border-cyan-500/50">«گوگل باز کن»</span> یا <span class="text-emerald-400 font-bold border-b border-emerald-500/50">«آهنگ فانک»</span>
+        </p>
     </header>
 
-    <!-- MAIN STUDIO WORKSPACE -->
-    <div class="flex-1 flex relative overflow-hidden">
+    <!-- Main Center Interactive Orb -->
+    <main class="z-10 flex flex-col items-center justify-center relative my-auto">
+        <!-- Ripple Rings Container -->
+        <div id="rippleContainer" class="absolute w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center pointer-events-none">
+            <div class="wave-ring w-full h-full opacity-0" id="ring1"></div>
+            <div class="wave-ring w-full h-full opacity-0" style="animation-delay: 0.6s;" id="ring2"></div>
+            <div class="wave-ring w-full h-full opacity-0" style="animation-delay: 1.2s;" id="ring3"></div>
+        </div>
 
-        <!-- LEFT TOOLBAR -->
-        <aside class="w-72 glass-panel p-4 flex flex-col gap-5 z-20 overflow-y-auto max-h-full shadow-2xl">
-            <!-- Tool Selection -->
-            <div>
-                <label class="text-xs font-semibold text-gray-400 mb-2 flex items-center justify-between">
-                    <span>انتخاب ابزار دست</span>
-                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
-                </label>
-                <div class="grid grid-cols-2 gap-2">
-                    <button data-tool="brush" class="tool-btn glass-btn p-3 rounded-xl flex flex-col items-center gap-1 active">
-                        <i class="fa-solid fa-paintbrush text-xl text-indigo-400"></i>
-                        <span class="text-xs font-medium">قلم‌موی کشسانی</span>
-                    </button>
-                    <button data-tool="spray" class="tool-btn glass-btn p-3 rounded-xl flex flex-col items-center gap-1">
-                        <i class="fa-solid fa-spray-can text-xl text-pink-400"></i>
-                        <span class="text-xs font-medium">اسپری ذرات</span>
-                    </button>
-                    <button data-tool="slime" class="tool-btn glass-btn p-3 rounded-xl flex flex-col items-center gap-1">
-                        <i class="fa-solid fa-droplet text-xl text-cyan-400"></i>
-                        <span class="text-xs font-medium">مایع و اسلایم</span>
-                    </button>
-                    <button data-tool="smudge" class="tool-btn glass-btn p-3 rounded-xl flex flex-col items-center gap-1">
-                        <i class="fa-solid fa-hand text-xl text-amber-400"></i>
-                        <span class="text-xs font-medium">اسفنج / محوکن</span>
-                    </button>
-                    <button data-tool="bucket" class="tool-btn glass-btn p-3 rounded-xl flex flex-col items-center gap-1">
-                        <i class="fa-solid fa-fill-drip text-xl text-emerald-400"></i>
-                        <span class="text-xs font-medium">سطل موج رنگ</span>
-                    </button>
-                    <button data-tool="stencil" class="tool-btn glass-btn p-3 rounded-xl flex flex-col items-center gap-1">
-                        <i class="fa-solid fa-shapes text-xl text-purple-400"></i>
-                        <span class="text-xs font-medium">اشکال شابلون</span>
-                    </button>
-                </div>
+        <!-- Outer Glowing Border & Orb Button -->
+        <div class="relative group cursor-pointer" id="orbContainer">
+            <div id="glowBg" class="absolute -inset-4 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 opacity-60 blur-xl group-hover:opacity-100 transition duration-700"></div>
+            
+            <button id="orbButton" aria-label="شروع مکالمه" class="orb-idle relative w-48 h-48 sm:w-60 sm:h-60 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl border-4 border-white/20 active:scale-95 hover:border-white/40">
+                <i id="orbIcon" class="fa-solid fa-microphone text-4xl sm:text-5xl text-white transition-all duration-300 drop-shadow-md"></i>
+                <span id="orbStatusText" class="text-xs sm:text-sm font-semibold mt-3 text-white/90 tracking-wide transition-all duration-300">
+                    لمس کنید
+                </span>
+            </button>
+        </div>
+
+        <!-- Status Indicator Badge -->
+        <div id="statusBadge" class="mt-8 px-5 py-2 rounded-full glass-card text-xs sm:text-sm font-medium text-slate-300 flex items-center gap-2 shadow-lg transition-all duration-300">
+            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+            <span id="statusMessage">آماده برای دریافت دستورات صوتی شما</span>
+        </div>
+    </main>
+
+    <!-- Bottom Transcript & Simulation Buttons -->
+    <footer class="z-10 pb-8 w-full max-w-lg px-4 flex flex-col items-center gap-4">
+        <div class="w-full glass-card rounded-2xl p-4 shadow-2xl text-right transition-all duration-300 border border-slate-700/50">
+            <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+                <span class="text-xs text-purple-400 font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-comments"></i> متن مکالمه
+                </span>
+                <span id="speechConfidence" class="text-[10px] text-slate-500">موتور صوتی فعال</span>
             </div>
 
-            <!-- Hand Visual Style -->
-            <div>
-                <label class="text-xs font-semibold text-gray-400 mb-2 block">ظاهر فیزیکی دست</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button data-style="cyber" class="hand-style-btn glass-btn py-2 rounded-xl text-xs font-medium active">سایبر</button>
-                    <button data-style="neon" class="hand-style-btn glass-btn py-2 rounded-xl text-xs font-medium">نئون</button>
-                    <button data-style="real" class="hand-style-btn glass-btn py-2 rounded-xl text-xs font-medium">آناتومیک</button>
-                </div>
+            <div class="space-y-2 text-xs sm:text-sm min-h-[50px] flex flex-col justify-center">
+                <p id="userTranscript" class="text-slate-400 italic">
+                    <span class="text-indigo-400 font-bold">شما:</span> <span id="userText">هنوز چیزی نگفته‌اید...</span>
+                </p>
+                <p id="aiResponse" class="text-slate-200 font-medium">
+                    <span class="text-emerald-400 font-bold">هوش مصنوعی:</span> <span id="aiText">منتظر دستور شما هستم!</span>
+                </p>
             </div>
+        </div>
 
-            <!-- Color Palette -->
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="text-xs font-semibold text-gray-400">پالت رنگی</label>
-                    <input type="color" id="custom-color" value="#a855f7" class="w-6 h-6 rounded-md bg-transparent cursor-pointer border-0">
-                </div>
-                <!-- Color presets -->
-                <div class="grid grid-cols-6 gap-2" id="color-presets">
-                    <!-- Dynamic colors inserted via JS -->
-                </div>
-            </div>
+        <!-- Quick Action Buttons -->
+        <div class="flex flex-wrap justify-center items-center gap-2 w-full">
+            <button id="simBtnHello" class="text-xs bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/40 text-purple-200 px-3 py-1.5 rounded-xl transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-md">
+                <i class="fa-solid fa-hand-wave text-purple-400"></i> «سلام»
+            </button>
+            <button id="simBtnGoogle" class="text-xs bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/40 text-cyan-200 px-3 py-1.5 rounded-xl transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-md">
+                <i class="fa-brands fa-google text-cyan-400"></i> «گوگل باز کن»
+            </button>
+            <button id="simBtnFunk" class="text-xs bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-500/40 text-emerald-200 px-3 py-1.5 rounded-xl transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-md">
+                <i class="fa-solid fa-music text-emerald-400"></i> «آهنگ فانک»
+            </button>
+            <button id="stopMusicBtn" class="text-xs bg-red-900/50 hover:bg-red-800/80 border border-red-500/60 text-red-200 px-3 py-1.5 rounded-xl transition duration-200 hidden items-center gap-1.5 active:scale-95 shadow-md animate-pulse">
+                <i class="fa-solid fa-square"></i> قطع موزیک
+            </button>
+            <button id="helpBtn" class="text-xs bg-slate-800/60 hover:bg-slate-700/60 border border-slate-600/40 text-slate-300 px-2.5 py-1.5 rounded-xl transition duration-200 flex items-center gap-1">
+                <i class="fa-solid fa-circle-question"></i> راهنما
+            </button>
+        </div>
+    </footer>
 
-            <!-- Physics Controls -->
-            <div class="space-y-4 pt-2 border-t border-gray-800">
-                <div>
-                    <div class="flex justify-between text-xs text-gray-300 mb-1">
-                        <span>اندازه ابزار / شعاع</span>
-                        <span id="size-val">25</span>
-                    </div>
-                    <input type="range" id="size-slider" min="5" max="80" value="25" class="w-full">
-                </div>
-
-                <div>
-                    <div class="flex justify-between text-xs text-gray-300 mb-1">
-                        <span>سختی و نيروی فیزیک</span>
-                        <span id="stiffness-val">80%</span>
-                    </div>
-                    <input type="range" id="stiffness-slider" min="10" max="100" value="80" class="w-full">
-                </div>
-
-                <!-- Gravity and Dripping Toggle -->
-                <div class="flex items-center justify-between glass-btn p-2.5 rounded-xl">
-                    <span class="text-xs text-gray-300 flex items-center gap-2">
-                        <i class="fa-solid fa-arrow-down-long text-cyan-400"></i>
-                        شارش و چکیدن (گرانش)
-                    </span>
-                    <input type="checkbox" id="gravity-toggle" checked class="w-4 h-4 accent-purple-500 cursor-pointer">
-                </div>
-            </div>
-
-            <!-- Canvas Background Picker -->
-            <div>
-                <label class="text-xs font-semibold text-gray-400 mb-2 block">بافت بوم نقاشی</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button data-bg="dark" class="bg-btn glass-btn py-2 rounded-xl text-xs active">تیره Studio</button>
-                    <button data-bg="grid" class="bg-btn glass-btn py-2 rounded-xl text-xs">شبکه گرید</button>
-                    <button data-bg="paper" class="bg-btn glass-btn py-2 rounded-xl text-xs">کاغذ کهنه</button>
-                </div>
-            </div>
-        </aside>
-
-        <!-- CANVAS AREA -->
-        <main class="flex-1 relative overflow-hidden bg-slate-950 flex items-center justify-center">
-            <!-- Paint Display Canvas -->
-            <canvas id="paintCanvas" class="absolute inset-0 w-full h-full z-0"></canvas>
-            <!-- Interactive Hand & Physics Overlay Canvas -->
-            <canvas id="physicsCanvas" class="absolute inset-0 w-full h-full z-10"></canvas>
-
-            <!-- Floating Info Badge -->
-            <div class="absolute bottom-4 right-4 glass-panel px-4 py-2 rounded-2xl z-20 flex items-center gap-3 text-xs text-gray-300 shadow-xl pointer-events-none">
-                <i class="fa-solid fa-hand-pointer text-indigo-400 animate-pulse"></i>
-                <span id="control-hint-text">برای کشیدن، ماوس یا لمس را نگه دارید | فشار و کلیک = انعطاف مفاصل دست</span>
-            </div>
-
-            <!-- WebCam Live Preview Overlay PIP -->
-            <div id="webcam-container" class="hidden absolute top-4 left-4 z-30 glass-panel p-2 rounded-2xl flex-col items-center shadow-2xl border border-indigo-500/30 w-52">
-                <div class="relative w-full h-36 rounded-xl overflow-hidden bg-black/60 flex items-center justify-center">
-                    <video id="webcam-video" class="w-full h-full object-cover transform -scale-x-100" playsinline></video>
-                    <canvas id="webcam-canvas" class="absolute inset-0 w-full h-full transform -scale-x-100 pointer-events-none"></canvas>
-                    <div id="camera-loading" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center gap-2 text-xs text-indigo-300">
-                        <i class="fa-solid fa-spinner fa-spin text-lg"></i>
-                        <span>راه اندازی دوربین...</span>
-                    </div>
-                </div>
-                <div class="mt-2 w-full flex items-center justify-between text-[10px] text-gray-300 px-1">
-                    <span id="cam-status" class="flex items-center gap-1 text-amber-400">
-                        <i class="fa-solid fa-circle text-[8px]"></i> در حال دریافت...
-                    </span>
-                    <span id="gesture-badge" class="text-purple-300 font-bold bg-purple-900/40 px-1.5 py-0.5 rounded border border-purple-500/30">دست آزاد</span>
-                </div>
-            </div>
-        </main>
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card max-w-sm w-full rounded-2xl p-6 text-right border border-purple-500/30">
+            <h3 class="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info"></i> راهنمای دستورات صوتی
+            </h3>
+            <p class="text-xs text-slate-300 leading-relaxed space-y-2 mb-4">
+                ۱. روی دایره مرکزی لمس کنید تا میکروفون فعال شود.<br>
+                ۲. می‌توانید هر یک از فرمان‌های زیر را بگویید:<br>
+                &bull; <b>«سلام»</b> &larr; پاسخ گرم هوش مصنوعی<br>
+                &bull; <b>«گوگل باز کن»</b> &larr; باز کردن سایت گوگل در زبانه جدید<br>
+                &bull; <b>«یه آهنگ فانک پخش کن»</b> &larr; ساخت و پخش ریتم جذاب فانک به صورت زنده<br>
+                ۳. با دکمه‌های سریع پایین صفحه نیز می‌توانید دستورات را شبیه‌سازی کنید.
+            </p>
+            <button id="closeHelp" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-xl text-xs transition duration-200">
+                متوجه شدم
+            </button>
+        </div>
     </div>
 
     <script>
-        // Web Audio Synthesizer for Interactive Sound FX
-        class AudioFx {
-            constructor() {
-                this.ctx = null;
-                this.enabled = true;
-                this.initAudio();
-            }
+        const TARGET_INPUT = "سلام";
+        const AI_RESPONSE_TEXT = "سلام خوش آمدی چه کمکی از دستم بر میاد";
 
-            initAudio() {
-                try {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtx) {
-                        this.ctx = new AudioCtx();
-                    }
-                } catch(e) {
-                    console.warn("AudioContext not supported");
+        // DOM Element references
+        const orbButton = document.getElementById('orbButton');
+        const orbIcon = document.getElementById('orbIcon');
+        const orbStatusText = document.getElementById('orbStatusText');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusDot = document.getElementById('statusDot');
+        const statusMessage = document.getElementById('statusMessage');
+        const userText = document.getElementById('userText');
+        const aiText = document.getElementById('aiText');
+        const simBtnHello = document.getElementById('simBtnHello');
+        const simBtnGoogle = document.getElementById('simBtnGoogle');
+        const simBtnFunk = document.getElementById('simBtnFunk');
+        const stopMusicBtn = document.getElementById('stopMusicBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelp = document.getElementById('closeHelp');
+        const ring1 = document.getElementById('ring1');
+        const ring2 = document.getElementById('ring2');
+        const ring3 = document.getElementById('ring3');
+
+        // State Machine
+        let currentState = 'idle';
+        let recognition = null;
+        let currentAudioSource = null;
+
+        let funkAudioCtx = null;
+        let funkInterval = null;
+        let isFunkPlaying = false;
+
+        function setState(newState) {
+            currentState = newState;
+            orbButton.className = orbButton.className.replace(/orb-(idle|listening|speaking)/g, '');
+
+            if (newState === 'idle') {
+                orbButton.classList.add('orb-idle');
+                orbIcon.className = 'fa-solid fa-microphone text-4xl sm:text-5xl text-white transition-all duration-300 drop-shadow-md';
+                orbStatusText.textContent = 'لمس کنید';
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-400';
+                statusMessage.textContent = 'آماده برای دریافت دستورات صوتی شما';
+                ring1.classList.remove('active-wave');
+                ring2.classList.remove('active-wave');
+                ring3.classList.remove('active-wave');
+            } else if (newState === 'listening') {
+                orbButton.classList.add('orb-listening');
+                orbIcon.className = 'fa-solid fa-waveform text-4xl sm:text-5xl text-white animate-bounce';
+                orbStatusText.textContent = 'در حال شنیدن...';
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 animate-ping';
+                statusMessage.textContent = 'در حال گوش دادن به صدای شما... صحبت کنید';
+                ring1.classList.add('active-wave');
+                ring2.classList.add('active-wave');
+                ring3.classList.add('active-wave');
+            } else if (newState === 'processing') {
+                orbButton.classList.add('orb-idle');
+                orbIcon.className = 'fa-solid fa-spinner text-4xl sm:text-5xl text-white animate-spin';
+                orbStatusText.textContent = 'پردازش...';
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse';
+                statusMessage.textContent = 'در حال تحلیل دستور صوتی...';
+            } else if (newState === 'speaking') {
+                orbButton.classList.add('orb-speaking');
+                orbIcon.className = 'fa-solid fa-volume-high text-4xl sm:text-5xl text-white animate-pulse';
+                orbStatusText.textContent = 'در حال پاسخ...';
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+                statusMessage.textContent = 'هوش مصنوعی در حال صحبت است';
+                ring1.classList.add('active-wave');
+                ring2.classList.add('active-wave');
+                ring3.classList.add('active-wave');
+            }
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+            const view = new DataView(buffer);
+
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
                 }
             }
 
-            ensureState() {
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + pcmData.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, 1, true); // Mono channel
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcmData.length * 2, true);
+
+            let offset = 44;
+            for (let i = 0; i < pcmData.length; i++, offset += 2) {
+                view.setInt16(offset, pcmData[i], true);
             }
 
-            playSpray() {
-                if (!this.enabled || !this.ctx) return;
-                this.ensureState();
-                
-                try {
-                    const bufferSize = this.ctx.sampleRate * 0.04;
-                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function stopFunkMusic() {
+            if (funkInterval) {
+                clearInterval(funkInterval);
+                funkInterval = null;
+            }
+            if (funkAudioCtx) {
+                funkAudioCtx.close().catch(() => {});
+                funkAudioCtx = null;
+            }
+            isFunkPlaying = false;
+            if (stopMusicBtn) stopMusicBtn.classList.add('hidden');
+        }
+
+        function playFunkMusic() {
+            stopFunkMusic();
+
+            try {
+                funkAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (funkAudioCtx.state === 'suspended') {
+                    funkAudioCtx.resume();
+                }
+            } catch (e) {
+                console.error("Audio Context creation failed", e);
+                return;
+            }
+
+            isFunkPlaying = true;
+            if (stopMusicBtn) stopMusicBtn.classList.remove('hidden');
+
+            const tempo = 116; 
+            const stepTime = (60 / tempo) / 4; 
+            let step = 0;
+
+            const bassScale = [82.41, 98.00, 110.00, 123.47, 146.83];
+            const bassPattern = [0, -1, 0, 1, -1, 2, 0, -1, 3, 0, -1, 2, 1, 0, 4, -1];
+            const chordEMin = [164.81, 196.00, 246.94, 293.66];
+            const chordA7   = [174.61, 220.00, 261.63, 329.63];
+
+            funkInterval = setInterval(() => {
+                if (!funkAudioCtx || funkAudioCtx.state === 'closed') return;
+                const now = funkAudioCtx.currentTime;
+
+                // 1. Kick Drum
+                if ([0, 4, 8, 10, 12].includes(step % 16)) {
+                    const osc = funkAudioCtx.createOscillator();
+                    const gain = funkAudioCtx.createGain();
+                    osc.frequency.setValueAtTime(130, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
+                    gain.gain.setValueAtTime(1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    osc.connect(gain);
+                    gain.connect(funkAudioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                }
+
+                // 2. Snare Drum
+                if ([4, 12].includes(step % 16)) {
+                    const noise = funkAudioCtx.createBufferSource();
+                    const buffer = funkAudioCtx.createBuffer(1, Math.max(1, Math.floor(funkAudioCtx.sampleRate * 0.1)), funkAudioCtx.sampleRate);
                     const data = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) {
-                        data[i] = Math.random() * 2 - 1;
-                    }
-
-                    const noise = this.ctx.createBufferSource();
+                    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
                     noise.buffer = buffer;
 
-                    const filter = this.ctx.createBiquadFilter();
-                    filter.type = 'bandpass';
-                    filter.frequency.value = 1200 + Math.random() * 800;
-                    filter.Q.value = 3;
+                    const filter = funkAudioCtx.createBiquadFilter();
+                    filter.type = 'highpass';
+                    filter.frequency.value = 1000;
 
-                    const gain = this.ctx.createGain();
-                    gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+                    const gain = funkAudioCtx.createGain();
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
 
                     noise.connect(filter);
                     filter.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    noise.start();
-                } catch(e) {}
-            }
+                    gain.connect(funkAudioCtx.destination);
+                    noise.start(now);
+                    noise.stop(now + 0.15);
+                }
 
-            playSplat() {
-                if (!this.enabled || !this.ctx) return;
-                this.ensureState();
+                // 3. Hi-Hat
+                const hat = funkAudioCtx.createBufferSource();
+                const hatBuf = funkAudioCtx.createBuffer(1, Math.max(1, Math.floor(funkAudioCtx.sampleRate * 0.04)), funkAudioCtx.sampleRate);
+                const hatData = hatBuf.getChannelData(0);
+                for (let i = 0; i < hatBuf.length; i++) hatData[i] = Math.random() * 2 - 1;
+                hat.buffer = hatBuf;
+                const hatFilter = funkAudioCtx.createBiquadFilter();
+                hatFilter.type = 'highpass';
+                hatFilter.frequency.value = 6000;
+                const hatGain = funkAudioCtx.createGain();
+                const vol = (step % 2 === 0) ? 0.25 : 0.12;
+                hatGain.gain.setValueAtTime(vol, now);
+                hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                hat.connect(hatFilter);
+                hatFilter.connect(hatGain);
+                hatGain.connect(funkAudioCtx.destination);
+                hat.start(now);
+                hat.stop(now + 0.04);
 
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
+                // 4. Slap Bassline
+                const bassIdx = bassPattern[step % 16];
+                if (bassIdx !== -1) {
+                    const bassFreq = bassScale[bassIdx];
+                    const bassOsc = funkAudioCtx.createOscillator();
+                    const bassGain = funkAudioCtx.createGain();
+                    const bassFilter = funkAudioCtx.createBiquadFilter();
 
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.1);
+                    bassOsc.type = 'sawtooth';
+                    bassOsc.frequency.setValueAtTime(bassFreq, now);
 
-                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                    bassFilter.type = 'lowpass';
+                    bassFilter.frequency.setValueAtTime(1800, now);
+                    bassFilter.frequency.exponentialRampToValueAtTime(300, now + 0.18);
 
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
+                    bassGain.gain.setValueAtTime(0.45, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
 
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.1);
-                } catch(e) {}
-            }
+                    bassOsc.connect(bassFilter);
+                    bassFilter.connect(bassGain);
+                    bassGain.connect(funkAudioCtx.destination);
+                    bassOsc.start(now);
+                    bassOsc.stop(now + 0.2);
+                }
 
-            playStroke() {
-                if (!this.enabled || !this.ctx) return;
-                this.ensureState();
+                // 5. Funky Synth Stab
+                if ([2, 6, 10, 14].includes(step % 16)) {
+                    const chordNotes = (step % 16 < 8) ? chordEMin : chordA7;
+                    chordNotes.forEach(freq => {
+                        const synthOsc = funkAudioCtx.createOscillator();
+                        const synthGain = funkAudioCtx.createGain();
+                        synthOsc.type = 'triangle';
+                        synthOsc.frequency.setValueAtTime(freq, now);
 
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
+                        synthGain.gain.setValueAtTime(0.1, now);
+                        synthGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
 
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(120 + Math.random() * 40, this.ctx.currentTime);
+                        synthOsc.connect(synthGain);
+                        synthGain.connect(funkAudioCtx.destination);
+                        synthOsc.start(now);
+                        synthOsc.stop(now + 0.14);
+                    });
+                }
 
-                    gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+                step++;
+            }, stepTime * 1000);
+        }
 
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
+        function handleUserSpeech(text) {
+            stopFunkMusic();
+            setState('processing');
+            
+            const cleanedText = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim().toLowerCase();
+            
+            const containsHello = cleanedText.includes('سلام') || cleanedText.includes('صلوات') || cleanedText.includes('سلامون');
+            const containsGoogle = cleanedText.includes('گوگل') || cleanedText.includes('گوگلم') || cleanedText.includes('google');
+            const containsFunk = cleanedText.includes('فانک') || cleanedText.includes('اهنگ') || cleanedText.includes('آهنگ') || cleanedText.includes('موزیک');
 
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.06);
-                } catch(e) {}
+            if (containsGoogle) {
+                const responseText = "در حال باز کردن گوگل برای شما...";
+                aiText.textContent = `«${responseText}»`;
+                speakAIResponse(responseText, () => {
+                    window.open('https://www.google.com', '_blank');
+                });
+            } else if (containsFunk) {
+                const responseText = "در حال پخش آهنگ فانک! امیدوارم لذت ببری.";
+                aiText.textContent = `«${responseText}»`;
+                speakAIResponse(responseText, () => {
+                    playFunkMusic();
+                });
+            } else if (containsHello) {
+                const responseText = AI_RESPONSE_TEXT;
+                aiText.textContent = `«${responseText}»`;
+                speakAIResponse(responseText);
+            } else {
+                const politeReject = "دستور متوجه نشدم. می‌توانید بگوئید «سلام»، «گوگل باز کن» یا «یه آهنگ فانک پخش کن».";
+                aiText.textContent = politeReject;
+                speakAIResponse(politeReject);
             }
         }
 
-        const audio = new AudioFx();
+        async function speakAIResponse(textToSpeak, onComplete) {
+            setState('speaking');
 
-        // Articulated 2D Inverse Kinematics / Spring Hand Model
-        class PhysicsHand {
-            constructor() {
-                this.x = window.innerWidth / 2;
-                this.y = window.innerHeight / 2;
-                this.targetX = this.x;
-                this.targetY = this.y;
-                this.vx = 0;
-                this.vy = 0;
-
-                this.wristX = this.x;
-                this.wristY = this.y + 120;
-
-                this.isPressing = false;
-                this.style = 'cyber'; // cyber, neon, real
-
-                // 5 Fingers structure with individual flex states
-                this.fingers = [
-                    { name: 'Thumb', baseAngle: -0.65, lengths: [35, 25], flex: 0 },
-                    { name: 'Index', baseAngle: -0.28, lengths: [45, 30, 20], flex: 0 },
-                    { name: 'Middle', baseAngle: 0.0, lengths: [50, 35, 22], flex: 0 },
-                    { name: 'Ring', baseAngle: 0.28, lengths: [45, 32, 20], flex: 0 },
-                    { name: 'Pinky', baseAngle: 0.58, lengths: [35, 25, 18], flex: 0 }
-                ];
-            }
-
-            update(targetX, targetY, isPressing, stiffness, cameraActive) {
-                this.targetX = targetX;
-                this.targetY = targetY;
-                this.isPressing = isPressing;
-
-                // Physics spring dampening for hand position
-                const k = 0.18 * (stiffness / 100);
-                const damp = 0.72;
-
-                const ax = (this.targetX - this.x) * k;
-                const ay = (this.targetY - this.y) * k;
-
-                this.vx = (this.vx + ax) * damp;
-                this.vy = (this.vy + ay) * damp;
-
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Lagging wrist position for fluid arm movement
-                const targetWristX = this.x - this.vx * 4;
-                const targetWristY = this.y + 110 - this.vy * 2;
-
-                this.wristX += (targetWristX - this.wristX) * 0.12;
-                this.wristY += (targetWristY - this.wristY) * 0.12;
-
-                // Fallback flex calculation if camera tracking is not active
-                if (!cameraActive) {
-                    const pressureTarget = isPressing ? 0.85 : 0.05;
-                    this.fingers.forEach((f, idx) => {
-                        const wave = Math.sin(Date.now() * 0.005 + idx) * 0.03;
-                        f.flex += (pressureTarget + wave - f.flex) * 0.25;
-                    });
+            const finishSpeaking = () => {
+                setState('idle');
+                if (typeof onComplete === 'function') {
+                    onComplete();
                 }
-            }
+            };
 
-            draw(ctx, activeTool, currentColor, size) {
-                ctx.save();
-
-                // Draw Forearm
-                ctx.beginPath();
-                ctx.moveTo(this.wristX - 35, this.wristY + 180);
-                ctx.lineTo(this.wristX - 25, this.wristY);
-                ctx.lineTo(this.wristX + 25, this.wristY);
-                ctx.lineTo(this.wristX + 35, this.wristY + 180);
-                
-                if (this.style === 'cyber') {
-                    ctx.fillStyle = 'rgba(30, 41, 59, 0.85)';
-                    ctx.strokeStyle = '#6366f1';
-                    ctx.lineWidth = 2;
-                    ctx.fill();
-                    ctx.stroke();
-                } else if (this.style === 'neon') {
-                    ctx.strokeStyle = '#a855f7';
-                    ctx.shadowColor = '#a855f7';
-                    ctx.shadowBlur = 12;
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-                } else {
-                    ctx.fillStyle = '#e2e8f0';
-                    ctx.fill();
-                }
-
-                // Draw Palm
-                ctx.beginPath();
-                ctx.moveTo(this.wristX - 25, this.wristY);
-                ctx.lineTo(this.x - 30, this.y + 20);
-                ctx.lineTo(this.x, this.y + 15);
-                ctx.lineTo(this.x + 30, this.y + 20);
-                ctx.lineTo(this.wristX + 25, this.wristY);
-                ctx.closePath();
-
-                if (this.style === 'cyber') {
-                    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-                    ctx.strokeStyle = '#818cf8';
-                    ctx.fill();
-                    ctx.stroke();
-                } else if (this.style === 'neon') {
-                    ctx.strokeStyle = '#ec4899';
-                    ctx.stroke();
-                } else {
-                    ctx.fillStyle = '#cbd5e1';
-                    ctx.fill();
-                }
-
-                // Render 5 Articulated Fingers based on their independent flex values
-                this.fingers.forEach((finger, i) => {
-                    let jointX = this.x + (i - 2) * 12;
-                    let jointY = this.y + 15 + Math.abs(i - 2) * 3;
-
-                    ctx.beginPath();
-                    ctx.moveTo(jointX, jointY);
-
-                    let currentAngle = -Math.PI / 2 + finger.baseAngle;
-
-                    finger.lengths.forEach((len, j) => {
-                        // High flex = bent joints (fist/closed finger)
-                        const bend = finger.flex * (j + 1) * 0.48;
-                        currentAngle += bend * (i === 0 ? 0.6 : 1); // Thumb bends inwards
-
-                        jointX += Math.cos(currentAngle) * len;
-                        jointY += Math.sin(currentAngle) * len;
-
-                        ctx.lineTo(jointX, jointY);
-                    });
-
-                    if (this.style === 'cyber') {
-                        ctx.strokeStyle = (i === 1) ? currentColor : '#94a3b8';
-                        ctx.lineWidth = Math.max(2, 7 - jIdx(i));
-                        ctx.lineCap = 'round';
-                        ctx.stroke();
-
-                        // Glowing joint nodes
-                        ctx.beginPath();
-                        ctx.arc(jointX, jointY, 4, 0, Math.PI * 2);
-                        ctx.fillStyle = currentColor;
-                        ctx.fill();
-                    } else if (this.style === 'neon') {
-                        ctx.strokeStyle = '#06b6d4';
-                        ctx.shadowColor = '#06b6d4';
-                        ctx.shadowBlur = 10;
-                        ctx.lineWidth = 5;
-                        ctx.lineCap = 'round';
-                        ctx.stroke();
-                    } else {
-                        ctx.strokeStyle = '#94a3b8';
-                        ctx.lineWidth = 7;
-                        ctx.lineCap = 'round';
-                        ctx.stroke();
-                    }
-                });
-
-                // Draw Tool Attached to Index Tip / Hand
-                this.drawTool(ctx, activeTool, currentColor, size);
-
-                ctx.restore();
-            }
-
-            drawTool(ctx, tool, color, size) {
-                const tipX = this.x - 5;
-                const tipY = this.y - 35;
-
-                ctx.save();
-                ctx.translate(tipX, tipY);
-
-                if (tool === 'brush') {
-                    ctx.fillStyle = '#475569';
-                    ctx.fillRect(-4, 0, 8, 25);
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if (tool === 'spray') {
-                    ctx.fillStyle = '#1e293b';
-                    ctx.fillRect(-10, -5, 20, 35);
-                    ctx.fillStyle = color;
-                    ctx.fillRect(-6, -12, 12, 7);
-                } else if (tool === 'slime') {
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.arc(0, 5, size / 1.5, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if (tool === 'smudge') {
-                    ctx.fillStyle = '#f59e0b';
-                    ctx.beginPath();
-                    if (ctx.roundRect) {
-                        ctx.roundRect(-15, -10, 30, 25, 8);
-                    } else {
-                        ctx.rect(-15, -10, 30, 25);
-                    }
-                    ctx.fill();
-                } else if (tool === 'bucket') {
-                    ctx.fillStyle = '#334155';
-                    ctx.beginPath();
-                    ctx.arc(0, 5, 18, 0, Math.PI);
-                    ctx.fill();
-                    ctx.fillStyle = color;
-                    ctx.fillRect(-14, 0, 28, 5);
-                }
-
-                ctx.restore();
-            }
-        }
-
-        function jIdx(i) { return Math.abs(i - 2); }
-
-        class StudioApp {
-            constructor() {
-                this.paintCanvas = document.getElementById('paintCanvas');
-                this.paintCtx = this.paintCanvas.getContext('2d', { willReadFrequently: true });
-
-                this.physicsCanvas = document.getElementById('physicsCanvas');
-                this.physicsCtx = this.physicsCanvas.getContext('2d');
-
-                this.hand = new PhysicsHand();
-                this.particles = [];
-                this.stencils = [];
-                this.history = [];
-
-                // Camera & AI State
-                this.isCameraActive = false;
-                this.cameraUtils = null;
-                this.handsDetector = null;
-                this.camVideo = document.getElementById('webcam-video');
-                this.camCanvas = document.getElementById('webcam-canvas');
-                this.camCtx = this.camCanvas ? this.camCanvas.getContext('2d') : null;
-
-                // State
-                this.activeTool = 'brush';
-                this.currentColor = '#a855f7';
-                this.brushSize = 25;
-                this.stiffness = 80;
-                this.gravityEnabled = true;
-                this.bgStyle = 'dark';
-                this.isPointerDown = false;
-
-                this.pointerX = window.innerWidth / 2;
-                this.pointerY = window.innerHeight / 2;
-
-                // Initialize canvas dimensions & background properly
-                this.initCanvasSize();
-                this.initPalette();
-                this.renderBackground();
-                this.bindEvents();
-                this.saveState();
-
-                // Start Main Animation Loop
-                this.animate = this.animate.bind(this);
-                requestAnimationFrame(this.animate);
-            }
-
-            initCanvasSize() {
-                const w = Math.max(window.innerWidth || 800, 100);
-                const h = Math.max(window.innerHeight || 600, 100);
-
-                let tempCanvas = null;
-                if (this.paintCanvas.width > 0 && this.paintCanvas.height > 0) {
-                    tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = this.paintCanvas.width;
-                    tempCanvas.height = this.paintCanvas.height;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.drawImage(this.paintCanvas, 0, 0);
-                }
-
-                this.paintCanvas.width = w;
-                this.paintCanvas.height = h;
-                this.physicsCanvas.width = w;
-                this.physicsCanvas.height = h;
-
-                if (this.camCanvas) {
-                    this.camCanvas.width = 208;
-                    this.camCanvas.height = 144;
-                }
-
-                if (tempCanvas) {
-                    this.paintCtx.drawImage(tempCanvas, 0, 0);
-                } else {
-                    this.renderBackground();
-                }
-            }
-
-            initPalette() {
-                const presetContainer = document.getElementById('color-presets');
-                if (!presetContainer) return;
-                presetContainer.innerHTML = '';
-
-                const colors = [
-                    '#a855f7', '#6366f1', '#ec4899', '#3b82f6',
-                    '#06b6d4', '#10b981', '#f59e0b', '#ef4444',
-                    '#ffffff', '#64748b', '#000000', '#f43f5e'
-                ];
-
-                colors.forEach((col) => {
-                    const btn = document.createElement('button');
-                    btn.className = `w-7 h-7 rounded-lg border border-white/20 transition-transform hover:scale-110 cursor-pointer ${col === this.currentColor ? 'ring-2 ring-white scale-110' : ''}`;
-                    btn.style.backgroundColor = col;
-                    btn.addEventListener('click', () => {
-                        this.currentColor = col;
-                        const customInput = document.getElementById('custom-color');
-                        if (customInput && col.length === 7) customInput.value = col;
-                        document.querySelectorAll('#color-presets button').forEach(b => b.classList.remove('ring-2', 'ring-white', 'scale-110'));
-                        btn.classList.add('ring-2', 'ring-white', 'scale-110');
-                    });
-                    presetContainer.appendChild(btn);
-                });
-            }
-
-            renderBackground() {
-                const w = this.paintCanvas.width;
-                const h = this.paintCanvas.height;
-                if (!w || !h) return;
-
-                this.paintCtx.save();
-                if (this.bgStyle === 'dark') {
-                    this.paintCtx.fillStyle = '#0b0f19';
-                    this.paintCtx.fillRect(0, 0, w, h);
-                } else if (this.bgStyle === 'grid') {
-                    this.paintCtx.fillStyle = '#090d16';
-                    this.paintCtx.fillRect(0, 0, w, h);
-                    this.paintCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                    this.paintCtx.lineWidth = 1;
-                    const gridSize = 40;
-                    for (let x = 0; x < w; x += gridSize) {
-                        this.paintCtx.beginPath();
-                        this.paintCtx.moveTo(x, 0);
-                        this.paintCtx.lineTo(x, h);
-                        this.paintCtx.stroke();
-                    }
-                    for (let y = 0; y < h; y += gridSize) {
-                        this.paintCtx.beginPath();
-                        this.paintCtx.moveTo(0, y);
-                        this.paintCtx.lineTo(w, y);
-                        this.paintCtx.stroke();
-                    }
-                } else if (this.bgStyle === 'paper') {
-                    this.paintCtx.fillStyle = '#1e1c18';
-                    this.paintCtx.fillRect(0, 0, w, h);
-                    this.paintCtx.fillStyle = 'rgba(255, 255, 255, 0.015)';
-                    for (let i = 0; i < 4000; i++) {
-                        const px = Math.random() * w;
-                        const py = Math.random() * h;
-                        this.paintCtx.fillRect(px, py, 2, 2);
-                    }
-                }
-                this.paintCtx.restore();
-            }
-
-            initCameraTracking() {
-                if (this.handsDetector) return;
-
-                const loadingEl = document.getElementById('camera-loading');
-                const statusEl = document.getElementById('cam-status');
-
-                if (typeof window.Hands === 'undefined' || typeof window.Camera === 'undefined') {
-                    if (loadingEl) loadingEl.innerHTML = `<span class="text-amber-400 text-center px-2 text-[10px]">کتابخانه دوربین در حال بارگذاری است...</span>`;
-                    return;
-                }
-
-                try {
-                    this.handsDetector = new window.Hands({
-                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-                    });
-
-                    this.handsDetector.setOptions({
-                        maxNumHands: 1,
-                        modelComplexity: 1,
-                        minDetectionConfidence: 0.65,
-                        minTrackingConfidence: 0.65
-                    });
-
-                    this.handsDetector.onResults((results) => this.onHandTrackingResults(results));
-
-                    this.cameraUtils = new window.Camera(this.camVideo, {
-                        onFrame: async () => {
-                            if (this.isCameraActive && this.handsDetector && this.camVideo) {
-                                try {
-                                    await this.handsDetector.send({ image: this.camVideo });
-                                } catch(err) {}
-                            }
-                        },
-                        width: 320,
-                        height: 240
-                    });
-
-                    this.cameraUtils.start().then(() => {
-                        if (loadingEl) loadingEl.classList.add('hidden');
-                        if (statusEl) {
-                            statusEl.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> فعال`;
-                            statusEl.className = "flex items-center gap-1 text-emerald-400";
-                        }
-                    }).catch(err => {
-                        console.error("Camera access error:", err);
-                        if (loadingEl) loadingEl.innerHTML = `<span class="text-red-400 text-center px-2">خطا در دسترسی به دوربین</span>`;
-                        if (statusEl) {
-                            statusEl.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> غیرفعال`;
-                            statusEl.className = "flex items-center gap-1 text-red-400";
-                        }
-                    });
-
-                } catch (e) {
-                    console.error("MediaPipe initialization error:", e);
-                }
-            }
-
-            onHandTrackingResults(results) {
-                if (!this.camCtx || !this.camCanvas) return;
-                this.camCtx.clearRect(0, 0, this.camCanvas.width, this.camCanvas.height);
-
-                const statusEl = document.getElementById('cam-status');
-                const badgeEl = document.getElementById('gesture-badge');
-
-                if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-                    if (statusEl) {
-                        statusEl.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> در انتظار دست...`;
-                        statusEl.className = "flex items-center gap-1 text-amber-400";
-                    }
-                    if (badgeEl) badgeEl.textContent = "دست نامشخص";
-                    return;
-                }
-
-                if (statusEl) {
-                    statusEl.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> دست شناسایی شد`;
-                    statusEl.className = "flex items-center gap-1 text-emerald-400";
-                }
-
-                const landmarks = results.multiHandLandmarks[0];
-
-                this.drawLandmarksPreview(landmarks);
-
-                const wrist = landmarks[0];
-                const indexTip = landmarks[8];
-                const thumbTip = landmarks[4];
-
-                // Smooth hand position tracking
-                const rawX = (1 - indexTip.x) * window.innerWidth;
-                const rawY = indexTip.y * window.innerHeight;
-
-                this.pointerX += (rawX - this.pointerX) * 0.45;
-                this.pointerY += (rawY - this.pointerY) * 0.45;
-
-                // Sync 5 individual finger flex states (fist / individual movement)
-                this.syncPhysicsHandFlex(landmarks);
-
-                // Pinch gesture for painting trigger
-                const dx = thumbTip.x - indexTip.x;
-                const dy = thumbTip.y - indexTip.y;
-                const dz = (thumbTip.z || 0) - (indexTip.z || 0);
-                const pinchDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-                const isPinching = pinchDistance < 0.08;
-
-                // Determine active gesture text for UI badge
-                const isFist = this.hand.fingers.every(f => f.flex > 0.65);
-                if (isFist) {
-                    if (badgeEl) {
-                        badgeEl.textContent = "مُشت کامل ✊";
-                        badgeEl.className = "text-amber-300 font-bold bg-amber-900/40 px-1.5 py-0.5 rounded border border-amber-500/30";
-                    }
-                } else if (isPinching) {
-                    if (badgeEl) {
-                        badgeEl.textContent = "نقاشی (Pinch) 👌";
-                        badgeEl.className = "text-emerald-300 font-bold bg-emerald-900/40 px-1.5 py-0.5 rounded border border-emerald-500/30";
-                    }
-                } else {
-                    if (badgeEl) {
-                        badgeEl.textContent = "دست آزاد ✋";
-                        badgeEl.className = "text-purple-300 font-bold bg-purple-900/40 px-1.5 py-0.5 rounded border border-purple-500/30";
-                    }
-                }
-
-                if (isPinching && !this.isPointerDown) {
-                    if (this.activeTool === 'bucket') {
-                        this.triggerBucketSplash(this.pointerX, this.pointerY);
-                    } else if (this.activeTool === 'stencil') {
-                        this.spawnStencil(this.pointerX, this.pointerY);
-                    }
-                }
-
-                this.isPointerDown = isPinching;
-            }
-
-            drawLandmarksPreview(landmarks) {
-                if (!this.camCtx || !this.camCanvas) return;
-                const w = this.camCanvas.width;
-                const h = this.camCanvas.height;
-
-                // Connect skeletal landmarks for live webcam display
-                const connections = [
-                    [0,1],[1,2],[2,3],[3,4], // Thumb
-                    [0,5],[5,6],[6,7],[7,8], // Index
-                    [0,9],[9,10],[10,11],[11,12], // Middle
-                    [0,13],[13,14],[14,15],[15,16], // Ring
-                    [0,17],[17,18],[18,19],[19,20]  // Pinky
-                ];
-
-                this.camCtx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
-                this.camCtx.lineWidth = 1.5;
-                connections.forEach(([i, j]) => {
-                    this.camCtx.beginPath();
-                    this.camCtx.moveTo(landmarks[i].x * w, landmarks[i].y * h);
-                    this.camCtx.lineTo(landmarks[j].x * w, landmarks[j].y * h);
-                    this.camCtx.stroke();
-                });
-
-                this.camCtx.fillStyle = '#a855f7';
-                landmarks.forEach((pt) => {
-                    this.camCtx.beginPath();
-                    this.camCtx.arc(pt.x * w, pt.y * h, 2.5, 0, Math.PI * 2);
-                    this.camCtx.fill();
-                });
-            }
-
-            syncPhysicsHandFlex(landmarks) {
-                const wrist = landmarks[0];
-                const fingerTips = [4, 8, 12, 16, 20];
-                const fingerMcps = [2, 5, 9, 13, 17]; // Base joints for better accuracy
-
-                fingerTips.forEach((tipIdx, i) => {
-                    const tip = landmarks[tipIdx];
-                    const mcp = landmarks[fingerMcps[i]];
-
-                    // Calculate tip-to-wrist and tip-to-mcp distance
-                    const distToWrist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
-                    const distToMcp = Math.hypot(tip.x - mcp.x, tip.y - mcp.y);
-
-                    // Normalize flex ratio: 1.0 = fully closed (fist), 0.0 = fully open
-                    let targetFlex = 0;
-                    if (i === 0) {
-                        // Thumb check relative to index base
-                        const indexBase = landmarks[5];
-                        const thumbDist = Math.hypot(tip.x - indexBase.x, tip.y - indexBase.y);
-                        targetFlex = Math.max(0, Math.min(1, 1 - (thumbDist * 3.2)));
-                    } else {
-                        // Other fingers: compare tip distance to palm base
-                        targetFlex = Math.max(0, Math.min(1, 1 - (distToWrist * 2.3)));
-                    }
-
-                    // Smooth transition to target flex
-                    if (this.hand.fingers[i]) {
-                        this.hand.fingers[i].flex += (targetFlex - this.hand.fingers[i].flex) * 0.35;
-                    }
-                });
-            }
-
-            toggleCamera() {
-                const webcamBox = document.getElementById('webcam-container');
-                const btnCam = document.getElementById('btn-camera');
-                const hintText = document.getElementById('control-hint-text');
-
-                this.isCameraActive = !this.isCameraActive;
-
-                if (this.isCameraActive) {
-                    if (webcamBox) {
-                        webcamBox.classList.remove('hidden');
-                        webcamBox.classList.add('flex');
-                    }
-                    if (btnCam) btnCam.classList.add('active');
-                    this.initCameraTracking();
-                    if (hintText) hintText.textContent = "دوربین فعال است | انگشت‌ها و مشت واقعی دست شما روی بوم شبیه‌سازی می‌شود";
-                } else {
-                    if (webcamBox) {
-                        webcamBox.classList.add('hidden');
-                        webcamBox.classList.remove('flex');
-                    }
-                    if (btnCam) btnCam.classList.remove('active');
-                    this.isPointerDown = false;
-                    if (hintText) hintText.textContent = "برای کشیدن، ماوس یا لمس را نگه دارید | فشار و کلیک = انعطاف مفاصل دست";
-                }
-            }
-
-            bindEvents() {
-                window.addEventListener('resize', () => this.initCanvasSize());
-
-                // Pointer events
-                window.addEventListener('pointermove', (e) => {
-                    if (this.isCameraActive) return; // Prioritize Camera if active
-                    this.pointerX = e.clientX;
-                    this.pointerY = e.clientY;
-                });
-
-                window.addEventListener('pointerdown', (e) => {
-                    if (e.target.closest('aside') || e.target.closest('header')) return;
-                    if (this.isCameraActive) return;
-                    this.pointerX = e.clientX;
-                    this.pointerY = e.clientY;
-                    this.isPointerDown = true;
-
-                    if (this.activeTool === 'bucket') {
-                        this.triggerBucketSplash(e.clientX, e.clientY);
-                    } else if (this.activeTool === 'stencil') {
-                        this.spawnStencil(e.clientX, e.clientY);
-                    }
-                });
-
-                window.addEventListener('pointerup', () => {
-                    if (this.isCameraActive) return;
-                    if (this.isPointerDown) {
-                        this.saveState();
-                    }
-                    this.isPointerDown = false;
-                });
-
-                // UI Event Handlers
-                document.querySelectorAll('.tool-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-                        const target = e.currentTarget;
-                        target.classList.add('active');
-                        this.activeTool = target.dataset.tool;
-                    });
-                });
-
-                document.querySelectorAll('.hand-style-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        document.querySelectorAll('.hand-style-btn').forEach(b => b.classList.remove('active'));
-                        const target = e.currentTarget;
-                        target.classList.add('active');
-                        this.hand.style = target.dataset.style;
-                    });
-                });
-
-                document.querySelectorAll('.bg-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'));
-                        const target = e.currentTarget;
-                        target.classList.add('active');
-                        this.bgStyle = target.dataset.bg;
-                        this.renderBackground();
-                    });
-                });
-
-                const customColorEl = document.getElementById('custom-color');
-                if (customColorEl) {
-                    customColorEl.addEventListener('input', (e) => {
-                        this.currentColor = e.target.value;
-                    });
-                }
-
-                const sizeSlider = document.getElementById('size-slider');
-                if (sizeSlider) {
-                    sizeSlider.addEventListener('input', (e) => {
-                        this.brushSize = parseInt(e.target.value);
-                        document.getElementById('size-val').textContent = this.brushSize;
-                    });
-                }
-
-                const stiffnessSlider = document.getElementById('stiffness-slider');
-                if (stiffnessSlider) {
-                    stiffnessSlider.addEventListener('input', (e) => {
-                        this.stiffness = parseInt(e.target.value);
-                        document.getElementById('stiffness-val').textContent = this.stiffness + '%';
-                    });
-                }
-
-                const gravityToggle = document.getElementById('gravity-toggle');
-                if (gravityToggle) {
-                    gravityToggle.addEventListener('change', (e) => {
-                        this.gravityEnabled = e.target.checked;
-                    });
-                }
-
-                const btnClear = document.getElementById('btn-clear');
-                if (btnClear) {
-                    btnClear.addEventListener('click', () => {
-                        this.renderBackground();
-                        this.particles = [];
-                        this.stencils = [];
-                        this.saveState();
-                    });
-                }
-
-                const btnUndo = document.getElementById('btn-undo');
-                if (btnUndo) {
-                    btnUndo.addEventListener('click', () => this.undo());
-                }
-
-                const btnSave = document.getElementById('btn-save');
-                if (btnSave) {
-                    btnSave.addEventListener('click', () => this.saveImage());
-                }
-
-                const btnSound = document.getElementById('btn-sound');
-                if (btnSound) {
-                    btnSound.addEventListener('click', (e) => {
-                        audio.enabled = !audio.enabled;
-                        e.currentTarget.classList.toggle('opacity-50', !audio.enabled);
-                    });
-                }
-
-                const btnCamera = document.getElementById('btn-camera');
-                if (btnCamera) {
-                    btnCamera.addEventListener('click', () => {
-                        this.toggleCamera();
-                    });
-                }
-            }
-
-            saveState() {
-                if (!this.paintCanvas.width || !this.paintCanvas.height) return;
-                if (this.history.length > 15) this.history.shift();
-                try {
-                    this.history.push(this.paintCtx.getImageData(0, 0, this.paintCanvas.width, this.paintCanvas.height));
-                } catch (e) {
-                    console.warn("Failed to save history state:", e);
-                }
-            }
-
-            undo() {
-                if (this.history.length > 1) {
-                    this.history.pop(); // Current
-                    const prev = this.history[this.history.length - 1];
-                    this.paintCtx.putImageData(prev, 0, 0);
-                }
-            }
-
-            saveImage() {
-                const exportCanvas = document.createElement('canvas');
-                exportCanvas.width = this.paintCanvas.width;
-                exportCanvas.height = this.paintCanvas.height;
-                const eCtx = exportCanvas.getContext('2d');
-                eCtx.drawImage(this.paintCanvas, 0, 0);
-
-                const link = document.createElement('a');
-                link.download = `physics-hand-painting-${Date.now()}.png`;
-                link.href = exportCanvas.toDataURL();
-                link.click();
-            }
-
-            spawnParticles() {
-                if (!this.isPointerDown) return;
-
-                const tipX = this.hand.x - 5;
-                const tipY = this.hand.y - 35;
-
-                if (this.activeTool === 'brush') {
-                    this.paintCtx.save();
-                    this.paintCtx.beginPath();
-                    this.paintCtx.arc(tipX, tipY, this.brushSize / 2, 0, Math.PI * 2);
-                    this.paintCtx.fillStyle = this.currentColor;
-                    this.paintCtx.shadowColor = this.currentColor;
-                    this.paintCtx.shadowBlur = 4;
-                    this.paintCtx.fill();
-                    this.paintCtx.restore();
-
-                    audio.playStroke();
-                } 
-                else if (this.activeTool === 'spray') {
-                    const count = Math.floor(this.brushSize / 2);
-                    for (let i = 0; i < count; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const dist = Math.random() * this.brushSize;
-                        const px = tipX + Math.cos(angle) * dist;
-                        const py = tipY + Math.sin(angle) * dist;
-
-                        this.paintCtx.fillStyle = this.currentColor;
-                        this.paintCtx.beginPath();
-                        this.paintCtx.arc(px, py, 1 + Math.random() * 2, 0, Math.PI * 2);
-                        this.paintCtx.fill();
-                    }
-                    audio.playSpray();
-                } 
-                else if (this.activeTool === 'slime') {
-                    for (let i = 0; i < 3; i++) {
-                        this.particles.push({
-                            x: tipX + (Math.random() - 0.5) * 20,
-                            y: tipY + (Math.random() - 0.5) * 20,
-                            vx: (Math.random() - 0.5) * 6,
-                            vy: Math.random() * 4 + 2,
-                            radius: 4 + Math.random() * (this.brushSize / 3),
-                            color: this.currentColor,
-                            life: 1.0
-                        });
-                    }
-                    audio.playSplat();
-                }
-                else if (this.activeTool === 'smudge') {
-                    const size = Math.round(this.brushSize * 1.5);
-                    const half = Math.floor(size / 2);
-                    let sx = Math.floor(tipX - half);
-                    let sy = Math.floor(tipY - half);
-
-                    const canvasW = this.paintCanvas.width;
-                    const canvasH = this.paintCanvas.height;
-
-                    if (sx < 0) sx = 0;
-                    if (sy < 0) sy = 0;
-                    const sw = Math.min(size, canvasW - sx);
-                    const sh = Math.min(size, canvasH - sy);
-
-                    if (sw > 0 && sh > 0) {
-                        try {
-                            const imgData = this.paintCtx.getImageData(sx, sy, sw, sh);
-                            const dx = sx + Math.round((Math.random() - 0.5) * 4);
-                            const dy = sy + Math.round((Math.random() - 0.5) * 4);
-                            this.paintCtx.putImageData(imgData, dx, dy);
-                        } catch (e) {}
-                    }
-                }
-            }
-
-            triggerBucketSplash(x, y) {
-                const splashCount = 40;
-                for (let i = 0; i < splashCount; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = 4 + Math.random() * 12;
-                    this.particles.push({
-                        x: x,
-                        y: y,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        radius: 6 + Math.random() * 10,
-                        color: this.currentColor,
-                        life: 1.0
-                    });
-                }
-                audio.playSplat();
-            }
-
-            spawnStencil(x, y) {
-                const shapes = ['star', 'circle', 'heart'];
-                const shape = shapes[Math.floor(Math.random() * shapes.length)];
-                this.stencils.push({ x, y, shape, size: this.brushSize * 2, color: this.currentColor });
-                this.drawStencil(x, y, shape, this.brushSize * 2, this.currentColor);
-            }
-
-            drawStencil(x, y, shape, size, color) {
-                this.paintCtx.save();
-                this.paintCtx.translate(x, y);
-                this.paintCtx.fillStyle = color;
-                this.paintCtx.beginPath();
-
-                if (shape === 'star') {
-                    for (let i = 0; i < 5; i++) {
-                        this.paintCtx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * size, -Math.sin((18 + i * 72) * Math.PI / 180) * size);
-                        this.paintCtx.lineTo(Math.cos((54 + i * 72) * Math.PI / 180) * (size / 2), -Math.sin((54 + i * 72) * Math.PI / 180) * (size / 2));
-                    }
-                } else if (shape === 'heart') {
-                    this.paintCtx.arc(-size / 4, -size / 4, size / 4, Math.PI, 0, false);
-                    this.paintCtx.arc(size / 4, -size / 4, size / 4, Math.PI, 0, false);
-                    this.paintCtx.lineTo(0, size / 2);
-                } else {
-                    this.paintCtx.arc(0, 0, size / 2, 0, Math.PI * 2);
-                }
-
-                this.paintCtx.closePath();
-                this.paintCtx.fill();
-                this.paintCtx.restore();
-            }
-
-            updateParticles() {
-                for (let i = this.particles.length - 1; i >= 0; i--) {
-                    const p = this.particles[i];
-
-                    if (this.gravityEnabled) {
-                        p.vy += 0.25;
-                    }
-
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vx *= 0.95;
-                    p.vy *= 0.95;
-
-                    this.paintCtx.fillStyle = p.color;
-                    this.paintCtx.beginPath();
-                    this.paintCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    this.paintCtx.fill();
-
-                    p.radius -= 0.15;
-                    if (p.radius <= 0.5 || p.y > this.paintCanvas.height) {
-                        this.particles.splice(i, 1);
-                    }
-                }
-            }
-
-            animate() {
-                this.physicsCtx.clearRect(0, 0, this.physicsCanvas.width, this.physicsCanvas.height);
-
-                this.hand.update(this.pointerX, this.pointerY, this.isPointerDown, this.stiffness, this.isCameraActive);
-
-                this.spawnParticles();
-
-                this.updateParticles();
-
-                this.hand.draw(this.physicsCtx, this.activeTool, this.currentColor, this.brushSize);
-
-                requestAnimationFrame(this.animate);
-            }
-        }
-
-        // Initialize Studio on Window Load safely
-        window.addEventListener('load', () => {
             try {
-                window.studioAppInstance = new StudioApp();
-            } catch(err) {
-                console.error("Initialization error:", err);
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `با لحن گرم و مهربان فارسی بگو: ${textToSpeak}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Sulafat" }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API response status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const base64Audio = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType || "";
+
+                if (base64Audio) {
+                    const rateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+
+                    const binaryString = atob(base64Audio);
+                    const len = binaryString.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+
+                    const pcm16 = new Int16Array(bytes.buffer);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+
+                    const audio = new Audio(audioUrl);
+                    currentAudioSource = audio;
+
+                    audio.onended = () => finishSpeaking();
+                    audio.onerror = () => fallbackWebSpeech(textToSpeak, finishSpeaking);
+
+                    await audio.play();
+                } else {
+                    fallbackWebSpeech(textToSpeak, finishSpeaking);
+                }
+
+            } catch (err) {
+                console.warn('Gemini TTS direct API call failed, using Web Speech Synthesis fallback:', err);
+                fallbackWebSpeech(textToSpeak, finishSpeaking);
+            }
+        }
+
+        function fallbackWebSpeech(textToSpeak, onComplete) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = 'fa-IR';
+                utterance.rate = 0.95;
+
+                utterance.onend = () => {
+                    if (typeof onComplete === 'function') onComplete();
+                    else setState('idle');
+                };
+
+                utterance.onerror = () => {
+                    if (typeof onComplete === 'function') onComplete();
+                    else setState('idle');
+                };
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                if (typeof onComplete === 'function') onComplete();
+                else setState('idle');
+            }
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'fa-IR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                setState('listening');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userText.textContent = `«${transcript}»`;
+                handleUserSpeech(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                console.warn('Speech recognition error:', event.error);
+                statusMessage.textContent = 'خطا در دریافت صدا! می‌توانید از دکمه‌های شبیه‌سازی پایین استفاده کنید.';
+                setState('idle');
+            };
+
+            recognition.onend = () => {
+                if (currentState === 'listening') {
+                    setState('idle');
+                }
+            };
+        }
+
+        orbButton.addEventListener('click', () => {
+            stopFunkMusic();
+            if (currentState === 'speaking') {
+                if (currentAudioSource) {
+                    currentAudioSource.pause();
+                }
+                window.speechSynthesis?.cancel();
+                setState('idle');
+                return;
+            }
+
+            if (currentState === 'listening') {
+                if (recognition) recognition.stop();
+                setState('idle');
+                return;
+            }
+
+            if (recognition) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    recognition.stop();
+                    setTimeout(() => recognition.start(), 200);
+                }
+            } else {
+                simulateSpeechInput(TARGET_INPUT);
             }
         });
+
+        simBtnHello?.addEventListener('click', () => simulateSpeechInput("سلام"));
+        simBtnGoogle?.addEventListener('click', () => simulateSpeechInput("گوگل باز کن"));
+        simBtnFunk?.addEventListener('click', () => simulateSpeechInput("یه آهنگ فانک پخش کن"));
+        stopMusicBtn?.addEventListener('click', () => stopFunkMusic());
+
+        function simulateSpeechInput(text) {
+            stopFunkMusic();
+            if (currentState === 'speaking') {
+                if (currentAudioSource) currentAudioSource.pause();
+                window.speechSynthesis?.cancel();
+            }
+            userText.textContent = `«${text}» (کلیک روی دکمه)`;
+            handleUserSpeech(text);
+        }
+
+        // Help Modal Controls
+        helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+        closeHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) helpModal.classList.add('hidden');
+        });
+
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.speedY = (Math.random() - 0.5) * 0.4;
+                this.alpha = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(147, 51, 234, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 40; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // Initialize state
+        setState('idle');
     </script>
 </body>
 </html>
