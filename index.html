@@ -1,654 +1,621 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دستیار صوتی پیشرفته جارویس - JARVIS AI</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Vazirmatn Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>گفتگوی صوتی و بازی آنلاین</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Vazirmatn Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      font-family: 'Vazirmatn', sans-serif;
+    }
     
-    <style>
-        * {
-            font-family: 'Vazirmatn', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+    /* پس‌زمینه متحرک و نئونی */
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      min-height: 100vh;
+      color: #f8fafc;
+    }
 
-        .font-orbitron {
-            font-family: 'Orbitron', sans-serif;
-        }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-        body {
-            background-color: #030712;
-            overflow-x: hidden;
-        }
+    .glow-btn {
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      transition: all 0.3s ease;
+    }
 
-        /* Arc Reactor & Orb Animations */
-        @keyframes arc-pulse {
-            0% {
-                transform: scale(0.98);
-                box-shadow: 0 0 25px rgba(6, 182, 212, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.4);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 60px rgba(14, 165, 233, 0.9), inset 0 0 35px rgba(56, 189, 248, 0.7);
-            }
-            100% {
-                transform: scale(0.98);
-                box-shadow: 0 0 25px rgba(6, 182, 212, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.4);
-            }
-        }
+    .glow-btn:hover {
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.8);
+      transform: translateY(-2px);
+    }
 
-        @keyframes rotate-ring {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+    .pulse-ring {
+      animation: pulse-ring-anim 2s infinite;
+    }
 
-        @keyframes reverse-rotate-ring {
-            0% { transform: rotate(360deg); }
-            100% { transform: rotate(0deg); }
-        }
-
-        @keyframes speak-pulse {
-            0% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
-            50% { box-shadow: 0 0 70px rgba(245, 158, 11, 1); }
-            100% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
-        }
-
-        @keyframes listen-pulse {
-            0% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.7); }
-            50% { box-shadow: 0 0 80px rgba(239, 68, 68, 1); }
-            100% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.7); }
-        }
-
-        .arc-reactor-idle {
-            animation: arc-pulse 3s infinite ease-in-out;
-            background: radial-gradient(circle at center, #0284c7 0%, #0369a1 40%, #0f172a 85%);
-        }
-
-        .arc-reactor-listening {
-            animation: listen-pulse 1.2s infinite ease-in-out;
-            background: radial-gradient(circle at center, #dc2626 0%, #991b1b 40%, #180808 85%);
-        }
-
-        .arc-reactor-speaking {
-            animation: speak-pulse 1.5s infinite ease-in-out;
-            background: radial-gradient(circle at center, #d97706 0%, #b45309 40%, #1c1002 85%);
-        }
-
-        .ring-rotate-fast {
-            animation: rotate-ring 8s linear infinite;
-        }
-
-        .ring-rotate-reverse {
-            animation: reverse-rotate-ring 12s linear infinite;
-        }
-
-        .glow-text-cyan {
-            text-shadow: 0 0 20px rgba(6, 182, 212, 0.8), 0 0 40px rgba(14, 165, 233, 0.4);
-        }
-
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-        }
-
-        .hud-border {
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            position: relative;
-        }
-        
-        .hud-border::before {
-            content: '';
-            position: absolute;
-            top: -2px; left: -2px; width: 8px; height: 8px;
-            border-top: 2px solid #38bdf8;
-            border-left: 2px solid #38bdf8;
-        }
-
-        .hud-border::after {
-            content: '';
-            position: absolute;
-            bottom: -2px; right: -2px; width: 8px; height: 8px;
-            border-bottom: 2px solid #38bdf8;
-            border-right: 2px solid #38bdf8;
-        }
-    </style>
+    @keyframes pulse-ring-anim {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+  </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between items-center relative text-slate-100 select-none overflow-hidden">
+<body class="p-4 md:p-8 flex flex-col items-center justify-center min-h-screen">
 
-    <canvas id="bgCanvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
+  <!-- کانتینر اصلی -->
+  <div class="w-full max-w-4xl flex flex-col gap-6">
 
-    <!-- Top Futuristic Header -->
-    <header class="z-10 pt-6 text-center max-w-lg px-4 flex flex-col items-center">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-xs font-semibold text-cyan-300 mb-2 shadow-lg backdrop-blur-md font-orbitron tracking-widest">
-            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
-            J.A.R.V.I.S OS v4.2 ONLINE
+    <!-- سربرگ برنامه -->
+    <header class="glass-card rounded-2xl p-6 text-center flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-2xl text-white shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid font-bold fa-headset"></i>
         </div>
-        <h1 class="text-3xl sm:text-4xl font-black tracking-wider glow-text-cyan text-cyan-400 font-orbitron">
-            JARVIS
-        </h1>
-        <p class="text-slate-400 text-xs sm:text-sm mt-1">
-            دستیار صوتی هوشمند اختصاصی
-        </p>
+        <div class="text-right">
+          <h1 class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400">
+            گفتگوی صوتی و بازی آنلاین
+          </h1>
+          <p class="text-xs text-slate-400">تماس صوتی مستقیم P2P بدون تاخیر با قابلیت بازی همزمان</p>
+        </div>
+      </div>
+
+      <!-- وضعیت اتصال -->
+      <div id="connectionStatus" class="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/80 border border-slate-700 text-sm">
+        <span class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
+        <span id="statusText" class="text-slate-300">در انتظار ایجاد یا ورود به اتاق...</span>
+      </div>
     </header>
 
-    <main class="z-10 flex flex-col items-center justify-center relative my-auto">
-        
-        <!-- Rotating Holographic Rings -->
-        <div class="relative w-72 h-72 sm:w-96 sm:h-96 flex items-center justify-center">
-            
-            <!-- Outer HUD Tech Ring 1 -->
-            <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 ring-rotate-fast pointer-events-none"></div>
-            <!-- Outer HUD Tech Ring 2 -->
-            <div class="absolute inset-3 rounded-full border border-cyan-400/20 ring-rotate-reverse pointer-events-none"></div>
-            <!-- Sound Visualizer Wave Container -->
-            <div class="absolute inset-6 rounded-full border border-cyan-500/40 flex items-center justify-center pointer-events-none opacity-60">
-                <canvas id="audioVisualizer" class="w-full h-full rounded-full"></canvas>
+    <!-- بخش مدیریت اتاق و تماس -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- پنل کنترل تماس (سمت راست) -->
+      <div class="glass-card rounded-2xl p-6 flex flex-col gap-5 md:col-span-1 shadow-xl">
+        <h2 class="text-lg font-bold border-b border-slate-700 pb-3 flex items-center gap-2 text-indigo-300">
+          <i class="fa-solid fa-phone"></i> مدیریت تماس صوتی
+        </h2>
+
+        <!-- فرم ساخت/ورود به اتاق -->
+        <div id="roomSetupArea" class="flex flex-col gap-4">
+          <button id="btnCreateRoom" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl glow-btn flex items-center justify-center gap-2 transition">
+            <i class="fa-solid fa-plus-circle"></i> ساخت اتاق جدید (تماس)
+          </button>
+
+          <div class="flex items-center gap-2 my-1">
+            <div class="h-px bg-slate-700 flex-1"></div>
+            <span class="text-xs text-slate-400">یا</span>
+            <div class="h-px bg-slate-700 flex-1"></div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-xs text-slate-300">کد اتاق دوستتان را وارد کنید:</label>
+            <div class="flex gap-2">
+              <input id="inputRoomCode" type="text" placeholder="مثلا: 12345" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-indigo-300 font-mono focus:outline-none focus:border-indigo-500 transition">
+              <button id="btnJoinRoom" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl transition">
+                ورود
+              </button>
             </div>
-
-            <!-- Central Arc Reactor / Orb Button -->
-            <button id="jarvisOrb" aria-label="فعال سازی جارویس" class="arc-reactor-idle relative w-48 h-48 sm:w-60 sm:h-60 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl border-4 border-cyan-300/40 active:scale-95 hover:border-cyan-200 cursor-pointer group">
-                
-                <!-- Inner Core Glow -->
-                <div class="absolute inset-4 rounded-full border border-cyan-200/40 flex items-center justify-center">
-                    <i id="orbIcon" class="fa-solid fa-microchip text-4xl sm:text-5xl text-cyan-100 transition-all duration-300 group-hover:scale-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"></i>
-                </div>
-
-                <span id="orbStatusText" class="absolute bottom-6 text-[11px] sm:text-xs font-bold text-cyan-100 tracking-wider font-orbitron uppercase bg-black/40 px-3 py-1 rounded-full border border-cyan-500/30">
-                    CLICK TO ACTIVATE
-                </span>
-            </button>
+          </div>
         </div>
 
-        <!-- Status Box -->
-        <div id="statusHUD" class="mt-4 px-6 py-2.5 rounded-xl glass-panel hud-border text-xs sm:text-sm font-medium text-cyan-200 flex items-center gap-3 shadow-2xl transition-all duration-300">
-            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span id="statusMessage">آماده دریافت دستورات صوتی سیستم</span>
-        </div>
-
-    </main>
-
-    <!-- Bottom Transcript & Simulation Command Buttons -->
-    <footer class="z-10 pb-6 w-full max-w-xl px-4 flex flex-col items-center gap-3">
-        
-        <!-- Live Transcript Display -->
-        <div class="w-full glass-panel hud-border rounded-xl p-3.5 shadow-2xl text-right transition-all duration-300">
-            <div class="flex justify-between items-center mb-1.5 pb-1.5 border-b border-cyan-900/60 text-xs">
-                <span class="text-cyan-400 font-bold flex items-center gap-2 font-orbitron">
-                    <i class="fa-solid fa-terminal text-cyan-400"></i> COMMAND CONSOLE
-                </span>
-                <span id="voiceEngineStatus" class="text-[10px] text-slate-400">موتور صوتی فعال (صدای مردانه)</span>
+        <!-- نمایش اطلاعات اتاق پس از ساخت -->
+        <div id="activeRoomInfo" class="hidden flex-col gap-4 bg-slate-900/80 p-4 rounded-xl border border-indigo-500/30">
+          <div class="text-center">
+            <span class="text-xs text-slate-400">کد اختصاصی اتاق شما:</span>
+            <div class="flex items-center justify-center gap-2 mt-1">
+              <span id="displayRoomCode" class="text-2xl font-mono font-bold text-indigo-400 tracking-wider">-----</span>
+              <button id="btnCopyCode" title="کپی کد" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-regular fa-copy"></i>
+              </button>
             </div>
+          </div>
 
-            <div class="space-y-1.5 text-xs sm:text-sm min-h-[46px] flex flex-col justify-center">
-                <p id="userTranscript" class="text-slate-300 italic">
-                    <span class="text-cyan-400 font-bold">شما:</span> <span id="userText">منتظر شنیدن صدای شما...</span>
-                </p>
-                <p id="jarvisResponse" class="text-slate-100 font-semibold">
-                    <span class="text-amber-400 font-bold">جارویس:</span> <span id="jarvisText">«در خدمت شما هستم قربان.»</span>
-                </p>
+          <p class="text-xs text-slate-400 text-center">این کد را به دوست خود بدهید تا روی «ورود» بزند و صوتی صحبت کنید.</p>
+        </div>
+
+        <!-- دکمه‌های کنترل میکروفون و صدا -->
+        <div id="audioControls" class="flex flex-col gap-3 mt-auto">
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnToggleMic" class="py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition">
+              <i class="fa-solid fa-microphone"></i>
+              <span id="micStatusText">میکروفون فعال</span>
+            </button>
+            <button id="btnToggleSpeaker" class="py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition">
+              <i class="fa-solid fa-volume-high"></i>
+              <span id="speakerStatusText">صدا فعال</span>
+            </button>
+          </div>
+
+          <button id="btnEndCall" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg shadow-rose-600/30 transition hidden flex items-center justify-center gap-2">
+            <i class="fa-solid fa-phone-slash"></i> قطع تماس صوتی
+          </button>
+        </div>
+      </div>
+
+      <!-- پنل ویژوالایزر و بازی همزمان (سمت چپ) -->
+      <div class="glass-card rounded-2xl p-6 md:col-span-2 flex flex-col gap-6 shadow-xl">
+
+        <!-- بخش نمایش امواج صوتی (Voice Visualizer) -->
+        <div class="grid grid-cols-2 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+          
+          <!-- صدای من -->
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-xs text-indigo-300 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-user"></i> صدای شما (میکروفون)
+            </span>
+            <div class="w-full h-16 bg-slate-950 rounded-lg overflow-hidden relative border border-indigo-500/20 flex items-center justify-center">
+              <canvas id="myCanvas" class="w-full h-full"></canvas>
             </div>
+          </div>
+
+          <!-- صدای مخاطب -->
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-xs text-pink-300 font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-user-group"></i> صدای مخاطب
+            </span>
+            <div class="w-full h-16 bg-slate-950 rounded-lg overflow-hidden relative border border-pink-500/20 flex items-center justify-center">
+              <canvas id="peerCanvas" class="w-full h-full"></canvas>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Command Quick Test Buttons -->
-        <div class="flex flex-wrap justify-center items-center gap-2 w-full">
-            <button id="cmdHelloBtn" class="text-xs bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
-                <i class="fa-solid fa-hand text-emerald-400"></i> «سلام»
-            </button>
-            <button id="cmdGoogleBtn" class="text-xs bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
-                <i class="fa-brands fa-google text-cyan-400"></i> «گوگل باز کن»
-            </button>
-            <button id="cmdMusicBtn" class="text-xs bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
-                <i class="fa-solid fa-compact-disc text-amber-400 animate-spin" style="animation-duration:4s;"></i> «اهنگ پخش کن»
-            </button>
-            <button id="cmdStopMusicBtn" class="text-xs bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 text-rose-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
-                <i class="fa-solid fa-stop text-rose-400"></i> «اهنگ قطع کن»
-            </button>
+        <!-- بازی آنلاین دوز (Tic-Tac-Toe) حین مکالمه -->
+        <div class="flex flex-col items-center gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-700/30">
+          <div class="flex items-center justify-between w-full">
+            <h3 class="text-md font-bold text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-gamepad text-indigo-400"></i> بازی دوز همزمان (سرگرمی حین صحبت)
+            </h3>
+            <span id="gameTurnText" class="text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
+              در انتظار اتصال مخاطب...
+            </span>
+          </div>
+
+          <!-- صفحه 9 خانه دوز -->
+          <div class="grid grid-cols-3 gap-2 w-full max-w-[260px] aspect-square">
+            <button data-index="0" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="1" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="2" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="3" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="4" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="5" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="6" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="7" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+            <button data-index="8" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
+          </div>
+
+          <button id="btnResetGame" class="text-xs text-indigo-300 hover:underline">
+            شروع مجدد بازی دوز
+          </button>
         </div>
-    </footer>
 
-    <script>
-        const jarvisOrb = document.getElementById('jarvisOrb');
-        const orbIcon = document.getElementById('orbIcon');
-        const orbStatusText = document.getElementById('orbStatusText');
-        const statusHUD = document.getElementById('statusHUD');
-        const statusDot = document.getElementById('statusDot');
-        const statusMessage = document.getElementById('statusMessage');
-        const userText = document.getElementById('userText');
-        const jarvisText = document.getElementById('jarvisText');
+      </div>
 
-        const cmdHelloBtn = document.getElementById('cmdHelloBtn');
-        const cmdGoogleBtn = document.getElementById('cmdGoogleBtn');
-        const cmdMusicBtn = document.getElementById('cmdMusicBtn');
-        const cmdStopMusicBtn = document.getElementById('cmdStopMusicBtn');
+    </div>
 
-        let currentState = 'idle';
-        let recognition = null;
-        let isMusicPlaying = false;
-        let rockAudioCtx = null;
-        let musicTimer = null;
+  </div>
 
-        function setState(newState) {
-            currentState = newState;
-            jarvisOrb.className = jarvisOrb.className.replace(/arc-reactor-(idle|listening|speaking)/g, '');
+  <!-- عنصر صوتی مخفی برای دریافت صدای مخاطب -->
+  <audio id="remoteAudio" autoplay></audio>
 
-            if (newState === 'idle') {
-                jarvisOrb.classList.add('arc-reactor-idle');
-                orbIcon.className = 'fa-solid fa-microchip text-4xl sm:text-5xl text-cyan-100 transition-all duration-300 group-hover:scale-110';
-                orbStatusText.textContent = 'READY';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse';
-                statusMessage.textContent = 'آماده دریافت دستور صوتی شما';
-            } else if (newState === 'listening') {
-                jarvisOrb.classList.add('arc-reactor-listening');
-                orbIcon.className = 'fa-solid fa-microphone text-4xl sm:text-5xl text-red-200 animate-pulse';
-                orbStatusText.textContent = 'LISTENING...';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 animate-ping';
-                statusMessage.textContent = 'جارویس در حال گوش دادن به صدای شما است...';
-            } else if (newState === 'processing') {
-                jarvisOrb.classList.add('arc-reactor-idle');
-                orbIcon.className = 'fa-solid fa-rotate text-4xl sm:text-5xl text-cyan-200 animate-spin';
-                orbStatusText.textContent = 'PROCESSING';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse';
-                statusMessage.textContent = 'در حال تحلیل فرمایش شما...';
-            } else if (newState === 'speaking') {
-                jarvisOrb.classList.add('arc-reactor-speaking');
-                orbIcon.className = 'fa-solid fa-volume-high text-4xl sm:text-5xl text-amber-200 animate-bounce';
-                orbStatusText.textContent = 'JARVIS SPEAKING';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
-                statusMessage.textContent = 'جارویس در حال صحبت کردن است';
-            }
-        }
+  <!-- پیام اعلان سفارشی (Modal/Toast) -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-2xl transition transform translate-y-20 opacity-0 flex items-center gap-3">
+    <i class="fa-solid fa-info-circle text-lg"></i>
+    <span id="toastText">پیام سیستم</span>
+  </div>
 
-        function speakJarvis(text, onComplete) {
-            setState('speaking');
+  <!-- اسکریپت اصلی اتصال صوتی و بازی -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            // Temporarily pause speech recognition while Jarvis speaks to prevent audio feedback loop
-            if (recognition) {
-                try { recognition.stop(); } catch(e){}
-            }
+    // تنظیمات پایگاه داده متصل به سیستم Canvas
+    const firebaseConfig = JSON.parse(__firebase_config);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'voice-chat-app';
 
-            // Cancel any ongoing speech
-            window.speechSynthesis.cancel();
+    // متغیرهای وضعیت برنامه‌نویسی
+    let currentUser = null;
+    let localStream = null;
+    let peerConnection = null;
+    let currentRoomId = null;
+    let isMicMuted = false;
+    let isSpeakerMuted = false;
+    let myRole = null; // 'caller' یا 'callee'
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'fa-IR';
-            
-            // Deep male pitch & deliberate authoritative rate
-            utterance.pitch = 0.65; // Deep pitch for Jarvis male voice
-            utterance.rate = 0.88;  // Calm, confident speed
+    // پیکربندی سرورهای STUN برای ارتباط مستقیم WebRTC
+    const rtcConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
 
-            // Attempt to pick a male voice if available in system
-            const voices = window.speechSynthesis.getVoices();
-            const maleVoice = voices.find(v => 
-                v.lang.includes('fa') || 
-                v.name.toLowerCase().includes('male') || 
-                v.name.toLowerCase().includes('david') || 
-                v.name.toLowerCase().includes('george')
-            );
-            if (maleVoice) {
-                utterance.voice = maleVoice;
-            }
+    // عناصر رابط کاربری
+    const btnCreateRoom = document.getElementById('btnCreateRoom');
+    const btnJoinRoom = document.getElementById('btnJoinRoom');
+    const inputRoomCode = document.getElementById('inputRoomCode');
+    const activeRoomInfo = document.getElementById('activeRoomInfo');
+    const displayRoomCode = document.getElementById('displayRoomCode');
+    const btnCopyCode = document.getElementById('btnCopyCode');
+    const roomSetupArea = document.getElementById('roomSetupArea');
+    const statusText = document.getElementById('statusText');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const btnEndCall = document.getElementById('btnEndCall');
+    const btnToggleMic = document.getElementById('btnToggleMic');
+    const btnToggleSpeaker = document.getElementById('btnToggleSpeaker');
+    const remoteAudio = document.getElementById('remoteAudio');
+    const gameTurnText = document.getElementById('gameTurnText');
+    const gameCells = document.querySelectorAll('.game-cell');
+    const btnResetGame = document.getElementById('btnResetGame');
 
-            utterance.onend = () => {
-                setState('idle');
-                if (typeof onComplete === 'function') onComplete();
-            };
-
-            utterance.onerror = () => {
-                setState('idle');
-                if (typeof onComplete === 'function') onComplete();
-            };
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // Pre-load voices for Speech Synthesis
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.onvoiceschanged = () => {
-                window.speechSynthesis.getVoices();
-            };
-        }
-
-        function stopBackInBlackMusic() {
-            if (musicTimer) {
-                clearInterval(musicTimer);
-                musicTimer = null;
-            }
-            if (rockAudioCtx) {
-                rockAudioCtx.close().catch(() => {});
-                rockAudioCtx = null;
-            }
-            isMusicPlaying = false;
-        }
-
-        function playBackInBlackMusic() {
-            stopBackInBlackMusic();
-
-            try {
-                rockAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (rockAudioCtx.state === 'suspended') {
-                    rockAudioCtx.resume();
-                }
-            } catch (e) {
-                console.error("Audio Context initialization failed:", e);
-                return;
-            }
-
-            isMusicPlaying = true;
-
-            const tempo = 94; // Iconic Back in Black tempo
-            const stepDuration = (60 / tempo) / 4; 
-            let step = 0;
-
-            // Frequencies for E5, D5, A5 chords
-            const freqE = [164.81, 246.94, 329.63]; // E chord
-            const freqD = [146.83, 220.00, 293.66]; // D chord
-            const freqA = [110.00, 220.00, 277.18]; // A chord
-
-            // Pentatonic Fill Notes (E, D, C#, B, G)
-            const fillNotes = [329.63, 293.66, 277.18, 246.94, 196.00, 164.81];
-
-            // Distortion Curve generator for Electric Guitar effect
-            function makeDistortionCurve(amount) {
-                const k = typeof amount === 'number' ? amount : 50;
-                const n_samples = 44100;
-                const curve = new Float32Array(n_samples);
-                const deg = Math.PI / 180;
-                for (let i = 0; i < n_samples; ++i) {
-                    const x = (i * 2) / n_samples - 1;
-                    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-                }
-                return curve;
-            }
-
-            const distNode = rockAudioCtx.createWaveShaper();
-            distNode.curve = makeDistortionCurve(100);
-            distNode.oversample = '4x';
-
-            const masterGain = rockAudioCtx.createGain();
-            masterGain.gain.value = 0.3;
-
-            distNode.connect(masterGain);
-            masterGain.connect(rockAudioCtx.destination);
-
-            function playGuitarChord(freqArray, time, duration) {
-                freqArray.forEach(freq => {
-                    const osc = rockAudioCtx.createOscillator();
-                    const gain = rockAudioCtx.createGain();
-
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(freq, time);
-
-                    gain.gain.setValueAtTime(0.4, time);
-                    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-
-                    osc.connect(gain);
-                    gain.connect(distNode);
-
-                    osc.start(time);
-                    osc.stop(time + duration);
-                });
-            }
-
-            musicTimer = setInterval(() => {
-                if (!rockAudioCtx || rockAudioCtx.state === 'closed') return;
-                const now = rockAudioCtx.currentTime;
-                const currentStep = step % 32;
-
-                // 1. Classic Rock Drums (Kick & Snare & Hat)
-                if ([0, 4, 8, 12, 16, 20, 24, 28].includes(currentStep)) {
-                    // Kick Drum
-                    const kick = rockAudioCtx.createOscillator();
-                    const kickGain = rockAudioCtx.createGain();
-                    kick.frequency.setValueAtTime(150, now);
-                    kick.frequency.exponentialRampToValueAtTime(35, now + 0.15);
-                    kickGain.gain.setValueAtTime(1, now);
-                    kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-                    kick.connect(kickGain);
-                    kickGain.connect(rockAudioCtx.destination);
-                    kick.start(now);
-                    kick.stop(now + 0.15);
-                }
-
-                if ([4, 12, 20, 28].includes(currentStep)) {
-                    // Snare Drum
-                    const noise = rockAudioCtx.createBufferSource();
-                    const buf = rockAudioCtx.createBuffer(1, Math.max(1, Math.floor(rockAudioCtx.sampleRate * 0.12)), rockAudioCtx.sampleRate);
-                    const data = buf.getChannelData(0);
-                    for (let i = 0; i < buf.length; i++) data[i] = Math.random() * 2 - 1;
-                    noise.buffer = buf;
-
-                    const snareGain = rockAudioCtx.createGain();
-                    snareGain.gain.setValueAtTime(0.6, now);
-                    snareGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-
-                    noise.connect(snareGain);
-                    snareGain.connect(rockAudioCtx.destination);
-                    noise.start(now);
-                    noise.stop(now + 0.12);
-                }
-
-                // 2. Iconic "Back in Black" Guitar Chords & Solo Fill
-                if (currentStep === 0) {
-                    playGuitarChord(freqE, now, 0.4); // E Chord hit 1
-                } else if (currentStep === 6) {
-                    playGuitarChord(freqD, now, 0.25); // D Chord hit 1
-                } else if (currentStep === 8) {
-                    playGuitarChord(freqD, now, 0.25); // D Chord hit 2
-                } else if (currentStep === 10) {
-                    playGuitarChord(freqD, now, 0.25); // D Chord hit 3
-                } else if (currentStep === 12) {
-                    playGuitarChord(freqA, now, 0.25); // A Chord hit 1
-                } else if (currentStep === 14) {
-                    playGuitarChord(freqA, now, 0.25); // A Chord hit 2
-                } else if (currentStep === 16) {
-                    playGuitarChord(freqA, now, 0.25); // A Chord hit 3
-                } else if (currentStep >= 24 && currentStep <= 30) {
-                    // Pentatonic Guitar Riff Fill
-                    const noteIdx = (currentStep - 24) / 2;
-                    if (Number.isInteger(noteIdx) && noteIdx < fillNotes.length) {
-                        playGuitarChord([fillNotes[noteIdx]], now, 0.18);
-                    }
-                }
-
-                step++;
-            }, stepDuration * 1000);
-        }
-
-        function processCommand(text) {
-            setState('processing');
-            const cleanText = text.trim().toLowerCase();
-
-            // Command 0: Greeting ("سلام")
-            const isGreetingCmd = cleanText.includes('سلام') || cleanText.includes('درود') || cleanText.includes('چطوری');
-
-            // Command 1: Open Google ("جارویس گوگل باز کن")
-            const isGoogleCmd = cleanText.includes('گوگل') || cleanText.includes('google');
-            
-            // Command 2: Stop Music ("جارویس اهنگ قطع کن")
-            const isMusicStopCmd = cleanText.includes('قطع') || cleanText.includes('خاموش') || cleanText.includes('استپ') || cleanText.includes('متوقف') || cleanText.includes('ببند');
-
-            // Command 3: Play Back in Black ("جارویس اهنگ back in black پخش کن")
-            const isMusicPlayCmd = cleanText.includes('black') || cleanText.includes('بلک') || cleanText.includes('بک') || 
-                                   ((cleanText.includes('اهنگ') || cleanText.includes('آهنگ') || cleanText.includes('موزیک')) && cleanText.includes('پخش'));
-
-            if (isGreetingCmd) {
-                stopBackInBlackMusic();
-                const resp = "سلام خوش امدی چه کمکی از دستم بر میاد";
-                jarvisText.textContent = `«${resp}»`;
-                speakJarvis(resp);
-            }
-            else if (isMusicStopCmd) {
-                stopBackInBlackMusic();
-                const resp = "بله قربان اهنگ قطع شد";
-                jarvisText.textContent = `«${resp}»`;
-                speakJarvis(resp);
-            }
-            else if (isGoogleCmd) {
-                stopBackInBlackMusic();
-                const firstResp = "بله قربان";
-                jarvisText.textContent = `«${firstResp}»`;
-                
-                // First Say "بله قربان", then open Google, then say "گوگل باز شد قربان"
-                speakJarvis(firstResp, () => {
-                    window.open('https://www.google.com', '_blank');
-                    
-                    setTimeout(() => {
-                        const secondResp = "گوگل باز شد قربان";
-                        jarvisText.textContent = `«${secondResp}»`;
-                        speakJarvis(secondResp);
-                    }, 400);
-                });
-            } 
-            else if (isMusicPlayCmd) {
-                const resp = "بله قربان اهنگ پخش شد";
-                jarvisText.textContent = `«${resp}»`;
-                speakJarvis(resp, () => {
-                    playBackInBlackMusic();
-                });
-            } 
-            else {
-                // Fallback greeting or general guidance without loop triggers
-                stopBackInBlackMusic();
-                const defaultResp = "متوجه دستور شما نشدم قربان. لطفاً دوباره بفرمایید.";
-                jarvisText.textContent = `«${defaultResp}»`;
-                speakJarvis(defaultResp);
-            }
-        }
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'fa-IR';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                setState('listening');
-            };
-
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                userText.textContent = `«${transcript}»`;
-                processCommand(transcript);
-            };
-
-            recognition.onerror = (event) => {
-                console.warn('Speech recognition error:', event.error);
-                statusMessage.textContent = 'دستور شنیده نشد. از دکمه‌های تست پایین نیز می‌توانید استفاده کنید.';
-                setState('idle');
-            };
-
-            recognition.onend = () => {
-                if (currentState === 'listening') {
-                    setState('idle');
-                }
-            };
+    // ۱. احراز هویت اولیه
+    async function initAuth() {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
         } else {
-            statusMessage.textContent = 'مرورگر شما از میکروفون صوتی مستقیم پشتیبانی نمی‌کند، می‌توانید از دکمه‌های شبیه‌سازی پایین استفاده کنید.';
+          await signInAnonymously(auth);
         }
+      } catch (err) {
+        console.error("خطا در احراز هویت:", err);
+      }
+    }
+    initAuth();
 
-        jarvisOrb.addEventListener('click', () => {
-            if (currentState === 'speaking') {
-                window.speechSynthesis?.cancel();
-                setState('idle');
-                return;
-            }
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+      }
+    });
 
-            if (currentState === 'listening') {
-                if (recognition) recognition.stop();
-                setState('idle');
-                return;
-            }
+    // نمایش اعلان خودکار
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastText').innerText = message;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
 
-            if (recognition) {
-                try {
-                    recognition.start();
-                } catch (e) {
-                    recognition.stop();
-                    setTimeout(() => recognition.start(), 200);
-                }
-            } else {
-                // Simulation fallback
-                simulateInput("سلام");
-            }
+    // ۲. راه اندازی میکروفون کاربر
+    async function getMicrophone() {
+      if (localStream) return localStream;
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        setupVisualizer(localStream, 'myCanvas', '#6366f1');
+        return localStream;
+      } catch (err) {
+        showToast('لطفاً دسترسی به میکروفون را تایید کنید.');
+        throw err;
+      }
+    }
+
+    // ۳. ساخت اتاق و تماس صوتی (Caller)
+    btnCreateRoom.addEventListener('click', async () => {
+      if (!currentUser) return;
+      try {
+        const stream = await getMicrophone();
+        myRole = 'X';
+        
+        // تولید کد ۵ رقمی تصادفی
+        currentRoomId = Math.floor(10000 + Math.random() * 90000).toString();
+        displayRoomCode.innerText = currentRoomId;
+        
+        roomSetupArea.classList.add('hidden');
+        activeRoomInfo.classList.remove('hidden');
+        activeRoomInfo.classList.add('flex');
+        btnEndCall.classList.remove('hidden');
+
+        updateStatus('درحال انتظار برای پیوستن دوستتان...', 'amber');
+
+        peerConnection = new RTCPeerConnection(rtcConfig);
+
+        // افزودن ترک صوتی به اتصال
+        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+
+        // دریافت ترک صوتی مخاطب
+        peerConnection.ontrack = (event) => {
+          remoteAudio.srcObject = event.streams[0];
+          setupVisualizer(event.streams[0], 'peerCanvas', '#ec4899');
+          updateStatus('تماس صوتی متصل شد! مشغول صحبت', 'emerald');
+          showToast('کاربر دوم متصل شد!');
+        };
+
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+        
+        // ذخيره کاندیداهای ICE
+        peerConnection.onicecandidate = async (event) => {
+          if (event.candidate) {
+            const callerCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'callerCandidates');
+            await addDoc(callerCandidatesCol, event.candidate.toJSON());
+          }
+        };
+
+        // ایجاد پیشنهاد SDP Offer
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        await setDoc(roomRef, {
+          offer: { type: offer.type, sdp: offer.sdp },
+          gameState: { board: Array(9).fill(''), turn: 'X', winner: null },
+          createdAt: Date.now()
         });
 
-        // Test Buttons Logic
-        cmdHelloBtn.addEventListener('click', () => simulateInput("سلام"));
-        cmdGoogleBtn.addEventListener('click', () => simulateInput("جارویس گوگل باز کن"));
-        cmdMusicBtn.addEventListener('click', () => simulateInput("جارویس اهنگ black in black پخش کن"));
-        cmdStopMusicBtn.addEventListener('click', () => simulateInput("جارویس اهنگ قطع کن"));
+        // گوش دادن به پاسخ کاربر دوم (Callee Answer)
+        onSnapshot(roomRef, async (snapshot) => {
+          const data = snapshot.data();
+          if (data && data.answer && !peerConnection.currentRemoteDescription) {
+            const answer = new RTCSessionDescription(data.answer);
+            await peerConnection.setRemoteDescription(answer);
+          }
+          if (data && data.gameState) {
+            updateGameBoardUI(data.gameState);
+          }
+        });
 
-        function simulateInput(text) {
-            if (currentState === 'speaking') {
-                window.speechSynthesis?.cancel();
+        // دریافت کاندیداهای کاربر دوم
+        const calleeCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'calleeCandidates');
+        onSnapshot(calleeCandidatesCol, (snapshot) => {
+          snapshot.docChanges().forEach(async (change) => {
+            if (change.type === 'added') {
+              const candidate = new RTCIceCandidate(change.doc.data());
+              await peerConnection.addIceCandidate(candidate);
             }
-            userText.textContent = `«${text}» (دستور دکمه تست)`;
-            processCommand(text);
+          });
+        });
+
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    // ۴. ورود به اتاق با کد (Callee)
+    btnJoinRoom.addEventListener('click', async () => {
+      const code = inputRoomCode.value.trim();
+      if (!code || !currentUser) {
+        showToast('لطفا کد اتاق را وارد کنید.');
+        return;
+      }
+
+      try {
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+        const roomSnap = await getDoc(roomRef);
+
+        if (!roomSnap.exists()) {
+          showToast('اتاقی با این کد یافت نشد!');
+          return;
         }
 
-        const canvas = document.getElementById('bgCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
+        const stream = await getMicrophone();
+        currentRoomId = code;
+        myRole = 'O';
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        roomSetupArea.classList.add('hidden');
+        btnEndCall.classList.remove('hidden');
+        updateStatus('درحال برقراری تماس صوتی...', 'indigo');
 
-        class Particle {
-            constructor() {
-                this.reset();
+        peerConnection = new RTCPeerConnection(rtcConfig);
+
+        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+
+        peerConnection.ontrack = (event) => {
+          remoteAudio.srcObject = event.streams[0];
+          setupVisualizer(event.streams[0], 'peerCanvas', '#ec4899');
+          updateStatus('تماس صوتی متصل شد! مشغول صحبت', 'emerald');
+          showToast('با موفقیت متصل شدید!');
+        };
+
+        peerConnection.onicecandidate = async (event) => {
+          if (event.candidate) {
+            const calleeCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'calleeCandidates');
+            await addDoc(calleeCandidatesCol, event.candidate.toJSON());
+          }
+        };
+
+        const roomData = roomSnap.data();
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        await updateDoc(roomRef, {
+          answer: { type: answer.type, sdp: answer.sdp }
+        });
+
+        // کاندیداهای Caller
+        const callerCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'callerCandidates');
+        onSnapshot(callerCandidatesCol, (snapshot) => {
+          snapshot.docChanges().forEach(async (change) => {
+            if (change.type === 'added') {
+              const candidate = new RTCIceCandidate(change.doc.data());
+              await peerConnection.addIceCandidate(candidate);
             }
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 1.5 + 0.5;
-                this.speedX = (Math.random() - 0.5) * 0.5;
-                this.speedY = (Math.random() - 0.5) * 0.5;
-                this.alpha = Math.random() * 0.6 + 0.2;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-                    this.reset();
-                }
-            }
-            draw() {
-                ctx.fillStyle = `rgba(6, 182, 212, ${this.alpha})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
+          });
+        });
+
+        // به روز رسانی بازی دوز
+        onSnapshot(roomRef, (snapshot) => {
+          const data = snapshot.data();
+          if (data && data.gameState) {
+            updateGameBoardUI(data.gameState);
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    // کپی کردن کد اتاق
+    btnCopyCode.addEventListener('click', () => {
+      if (currentRoomId) {
+        const dummy = document.createElement("input");
+        document.body.appendChild(dummy);
+        dummy.value = currentRoomId;
+        dummy.select();
+        document.execCommand("copy");
+        document.body.removeChild(dummy);
+        showToast('کد اتاق کپی شد!');
+      }
+    });
+
+    // کنترل قطع/وصل میکروفون
+    btnToggleMic.addEventListener('click', () => {
+      if (localStream) {
+        isMicMuted = !isMicMuted;
+        localStream.getAudioTracks()[0].enabled = !isMicMuted;
+        document.getElementById('micStatusText').innerText = isMicMuted ? 'میکروفون خاموش' : 'میکروفون فعال';
+        btnToggleMic.classList.toggle('bg-rose-600', isMicMuted);
+      }
+    });
+
+    // کنترل قطع/وصل بلندگو
+    btnToggleSpeaker.addEventListener('click', () => {
+      isSpeakerMuted = !isSpeakerMuted;
+      remoteAudio.muted = isSpeakerMuted;
+      document.getElementById('speakerStatusText').innerText = isSpeakerMuted ? 'صدا قطع' : 'صدا فعال';
+      btnToggleSpeaker.classList.toggle('bg-rose-600', isSpeakerMuted);
+    });
+
+    // قطع تماس صوتی
+    btnEndCall.addEventListener('click', () => {
+      if (peerConnection) peerConnection.close();
+      if (localStream) localStream.getTracks().forEach(t => t.stop());
+      location.reload();
+    });
+
+    // ۵. منطق بازی دوز همزمان (Tic-Tac-Toe)
+    let currentGameState = { board: Array(9).fill(''), turn: 'X', winner: null };
+
+    gameCells.forEach(cell => {
+      cell.addEventListener('click', async () => {
+        const index = cell.getAttribute('data-index');
+        if (!currentRoomId || !myRole) {
+          showToast('ابتدا باید وارد تماس صوتی شوید.');
+          return;
+        }
+        if (currentGameState.turn !== myRole) {
+          showToast('نوبت شما نیست!');
+          return;
+        }
+        if (currentGameState.board[index] !== '' || currentGameState.winner) {
+          return;
         }
 
-        for (let i = 0; i < 50; i++) {
-            particles.push(new Particle());
-        }
+        const newBoard = [...currentGameState.board];
+        newBoard[index] = myRole;
+        const nextTurn = myRole === 'X' ? 'O' : 'X';
+        const winner = checkWinner(newBoard);
 
-        function animateCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateCanvas);
-        }
-        animateCanvas();
+        const updatedState = {
+          board: newBoard,
+          turn: nextTurn,
+          winner: winner
+        };
 
-        // Initial launch state
-        setState('idle');
-    </script>
+        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+        await updateDoc(roomRef, { gameState: updatedState });
+      });
+    });
+
+    btnResetGame.addEventListener('click', async () => {
+      if (!currentRoomId) return;
+      const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+      await updateDoc(roomRef, {
+        gameState: { board: Array(9).fill(''), turn: 'X', winner: null }
+      });
+    });
+
+    function updateGameBoardUI(state) {
+      currentGameState = state;
+      gameCells.forEach((cell, idx) => {
+        cell.innerText = state.board[idx];
+        if(state.board[idx] === 'X') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 h-20";
+        if(state.board[idx] === 'O') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center text-pink-400 h-20";
+      });
+
+      if (state.winner) {
+        if (state.winner === 'DRAW') {
+          gameTurnText.innerText = "بازی مساوی شد!";
+        } else {
+          gameTurnText.innerText = `برنده بازی: ${state.winner}`;
+          showToast(`بازیکن ${state.winner} برنده شد!`);
+        }
+      } else {
+        gameTurnText.innerText = state.turn === myRole ? "نوبت شماست!" : "نوبت مخاطب...";
+      }
+    }
+
+    function checkWinner(board) {
+      const wins = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      for (let w of wins) {
+        if (board[w[0]] && board[w[0]] === board[w[1]] && board[w[0]] === board[w[2]]) {
+          return board[w[0]];
+        }
+      }
+      if (board.every(c => c !== '')) return 'DRAW';
+      return null;
+    }
+
+    // ۶. نمایش امواج صوت بر روی بوم گرافیکی (Visualizer)
+    function setupVisualizer(stream, canvasId, color) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+
+      analyser.fftSize = 32;
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function draw() {
+        requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const barWidth = (canvas.width / bufferLength) * 1.5;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+          const barHeight = (dataArray[i] / 255) * canvas.height;
+          ctx.fillStyle = color;
+          ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+          x += barWidth;
+        }
+      }
+      draw();
+    }
+
+    function updateStatus(text, color) {
+      statusText.innerText = text;
+      const dot = connectionStatus.querySelector('span');
+      dot.className = `w-3 h-3 rounded-full bg-${color}-500 animate-pulse`;
+    }
+
+  </script>
 </body>
 </html>
