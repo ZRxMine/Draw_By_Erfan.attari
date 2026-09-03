@@ -3,579 +3,506 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>هوش مصنوعی صوتی - دستیار تعاملی</title>
-    <!-- Tailwind CSS CDN -->
+    <title>دستیار صوتی پیشرفته جارویس - JARVIS AI</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Vazirmatn Font for Persian -->
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Google Vazirmatn Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
     
     <style>
         * {
             font-family: 'Vazirmatn', sans-serif;
             user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
         }
 
         body {
-            background-color: #080a12;
-            overflow: hidden;
+            background-color: #030712;
+            overflow-x: hidden;
         }
 
-        @keyframes pulse-ring {
+        /* Arc Reactor & Orb Animations */
+        @keyframes arc-pulse {
             0% {
-                transform: scale(0.95);
-                opacity: 0.8;
-                box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), inset 0 0 15px rgba(99, 102, 241, 0.4);
+                transform: scale(0.98);
+                box-shadow: 0 0 25px rgba(6, 182, 212, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.4);
             }
             50% {
-                transform: scale(1.08);
-                opacity: 1;
-                box-shadow: 0 0 50px rgba(168, 85, 247, 0.9), inset 0 0 30px rgba(168, 85, 247, 0.6);
+                transform: scale(1.05);
+                box-shadow: 0 0 60px rgba(14, 165, 233, 0.9), inset 0 0 35px rgba(56, 189, 248, 0.7);
             }
             100% {
-                transform: scale(0.95);
-                opacity: 0.8;
-                box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), inset 0 0 15px rgba(99, 102, 241, 0.4);
+                transform: scale(0.98);
+                box-shadow: 0 0 25px rgba(6, 182, 212, 0.6), inset 0 0 20px rgba(6, 182, 212, 0.4);
             }
         }
 
-        @keyframes wave-expand {
-            0% {
-                transform: scale(1);
-                opacity: 0.9;
-            }
-            100% {
-                transform: scale(2.2);
-                opacity: 0;
-            }
+        @keyframes rotate-ring {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .orb-idle {
-            animation: pulse-ring 3.5s infinite ease-in-out;
-            background: radial-gradient(circle at 35% 35%, #8b5cf6, #4f46e5, #0f172a);
+        @keyframes reverse-rotate-ring {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
         }
 
-        .orb-listening {
-            animation: pulse-ring 1.2s infinite ease-in-out;
-            background: radial-gradient(circle at 35% 35%, #ec4899, #ef4444, #431407);
+        @keyframes speak-pulse {
+            0% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
+            50% { box-shadow: 0 0 70px rgba(245, 158, 11, 1); }
+            100% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
         }
 
-        .orb-speaking {
-            animation: pulse-ring 1.8s infinite ease-in-out;
-            background: radial-gradient(circle at 35% 35%, #10b981, #06b6d4, #064e3b);
+        @keyframes listen-pulse {
+            0% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 80px rgba(239, 68, 68, 1); }
+            100% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.7); }
         }
 
-        .wave-ring {
-            position: absolute;
-            border-radius: 50%;
-            border: 2px solid rgba(168, 85, 247, 0.5);
-            pointer-events: none;
+        .arc-reactor-idle {
+            animation: arc-pulse 3s infinite ease-in-out;
+            background: radial-gradient(circle at center, #0284c7 0%, #0369a1 40%, #0f172a 85%);
         }
 
-        .active-wave {
-            animation: wave-expand 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        .arc-reactor-listening {
+            animation: listen-pulse 1.2s infinite ease-in-out;
+            background: radial-gradient(circle at center, #dc2626 0%, #991b1b 40%, #180808 85%);
         }
 
-        .glow-text {
-            text-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+        .arc-reactor-speaking {
+            animation: speak-pulse 1.5s infinite ease-in-out;
+            background: radial-gradient(circle at center, #d97706 0%, #b45309 40%, #1c1002 85%);
         }
 
-        .glass-card {
-            background: rgba(15, 23, 42, 0.65);
+        .ring-rotate-fast {
+            animation: rotate-ring 8s linear infinite;
+        }
+
+        .ring-rotate-reverse {
+            animation: reverse-rotate-ring 12s linear infinite;
+        }
+
+        .glow-text-cyan {
+            text-shadow: 0 0 20px rgba(6, 182, 212, 0.8), 0 0 40px rgba(14, 165, 233, 0.4);
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .hud-border {
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            position: relative;
+        }
+        
+        .hud-border::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; width: 8px; height: 8px;
+            border-top: 2px solid #38bdf8;
+            border-left: 2px solid #38bdf8;
+        }
+
+        .hud-border::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; right: -2px; width: 8px; height: 8px;
+            border-bottom: 2px solid #38bdf8;
+            border-right: 2px solid #38bdf8;
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between items-center relative text-white select-none">
+<body class="h-screen w-screen flex flex-col justify-between items-center relative text-slate-100 select-none overflow-hidden">
 
     <canvas id="bgCanvas" class="absolute inset-0 z-0 pointer-events-none"></canvas>
 
-    <!-- Top Header -->
-    <header class="z-10 pt-8 text-center max-w-md px-4">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-950/60 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-3 shadow-lg backdrop-blur-md">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            هوش مصنوعی صوتی تعاملی
+    <!-- Top Futuristic Header -->
+    <header class="z-10 pt-6 text-center max-w-lg px-4 flex flex-col items-center">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-xs font-semibold text-cyan-300 mb-2 shadow-lg backdrop-blur-md font-orbitron tracking-widest">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+            J.A.R.V.I.S OS v4.2 ONLINE
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight glow-text text-white">
-            دستیار هوشمند صوتی
+        <h1 class="text-3xl sm:text-4xl font-black tracking-wider glow-text-cyan text-cyan-400 font-orbitron">
+            JARVIS
         </h1>
-        <p class="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
-            فرمان‌های صوتی: <span class="text-purple-400 font-bold border-b border-purple-500/50">«سلام»</span> ، <span class="text-cyan-400 font-bold border-b border-cyan-500/50">«گوگل باز کن»</span> یا <span class="text-emerald-400 font-bold border-b border-emerald-500/50">«آهنگ فانک»</span>
+        <p class="text-slate-400 text-xs sm:text-sm mt-1">
+            دستیار صوتی هوشمند اختصاصی
         </p>
     </header>
 
-    <!-- Main Center Interactive Orb -->
     <main class="z-10 flex flex-col items-center justify-center relative my-auto">
-        <!-- Ripple Rings Container -->
-        <div id="rippleContainer" class="absolute w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center pointer-events-none">
-            <div class="wave-ring w-full h-full opacity-0" id="ring1"></div>
-            <div class="wave-ring w-full h-full opacity-0" style="animation-delay: 0.6s;" id="ring2"></div>
-            <div class="wave-ring w-full h-full opacity-0" style="animation-delay: 1.2s;" id="ring3"></div>
-        </div>
-
-        <!-- Outer Glowing Border & Orb Button -->
-        <div class="relative group cursor-pointer" id="orbContainer">
-            <div id="glowBg" class="absolute -inset-4 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 opacity-60 blur-xl group-hover:opacity-100 transition duration-700"></div>
+        
+        <!-- Rotating Holographic Rings -->
+        <div class="relative w-72 h-72 sm:w-96 sm:h-96 flex items-center justify-center">
             
-            <button id="orbButton" aria-label="شروع مکالمه" class="orb-idle relative w-48 h-48 sm:w-60 sm:h-60 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl border-4 border-white/20 active:scale-95 hover:border-white/40">
-                <i id="orbIcon" class="fa-solid fa-microphone text-4xl sm:text-5xl text-white transition-all duration-300 drop-shadow-md"></i>
-                <span id="orbStatusText" class="text-xs sm:text-sm font-semibold mt-3 text-white/90 tracking-wide transition-all duration-300">
-                    لمس کنید
+            <!-- Outer HUD Tech Ring 1 -->
+            <div class="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 ring-rotate-fast pointer-events-none"></div>
+            <!-- Outer HUD Tech Ring 2 -->
+            <div class="absolute inset-3 rounded-full border border-cyan-400/20 ring-rotate-reverse pointer-events-none"></div>
+            <!-- Sound Visualizer Wave Container -->
+            <div class="absolute inset-6 rounded-full border border-cyan-500/40 flex items-center justify-center pointer-events-none opacity-60">
+                <canvas id="audioVisualizer" class="w-full h-full rounded-full"></canvas>
+            </div>
+
+            <!-- Central Arc Reactor / Orb Button -->
+            <button id="jarvisOrb" aria-label="فعال سازی جارویس" class="arc-reactor-idle relative w-48 h-48 sm:w-60 sm:h-60 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl border-4 border-cyan-300/40 active:scale-95 hover:border-cyan-200 cursor-pointer group">
+                
+                <!-- Inner Core Glow -->
+                <div class="absolute inset-4 rounded-full border border-cyan-200/40 flex items-center justify-center">
+                    <i id="orbIcon" class="fa-solid fa-microchip text-4xl sm:text-5xl text-cyan-100 transition-all duration-300 group-hover:scale-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"></i>
+                </div>
+
+                <span id="orbStatusText" class="absolute bottom-6 text-[11px] sm:text-xs font-bold text-cyan-100 tracking-wider font-orbitron uppercase bg-black/40 px-3 py-1 rounded-full border border-cyan-500/30">
+                    CLICK TO ACTIVATE
                 </span>
             </button>
         </div>
 
-        <!-- Status Indicator Badge -->
-        <div id="statusBadge" class="mt-8 px-5 py-2 rounded-full glass-card text-xs sm:text-sm font-medium text-slate-300 flex items-center gap-2 shadow-lg transition-all duration-300">
-            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
-            <span id="statusMessage">آماده برای دریافت دستورات صوتی شما</span>
+        <!-- Status Box -->
+        <div id="statusHUD" class="mt-4 px-6 py-2.5 rounded-xl glass-panel hud-border text-xs sm:text-sm font-medium text-cyan-200 flex items-center gap-3 shadow-2xl transition-all duration-300">
+            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span id="statusMessage">آماده دریافت دستورات صوتی سیستم</span>
         </div>
+
     </main>
 
-    <!-- Bottom Transcript & Simulation Buttons -->
-    <footer class="z-10 pb-8 w-full max-w-lg px-4 flex flex-col items-center gap-4">
-        <div class="w-full glass-card rounded-2xl p-4 shadow-2xl text-right transition-all duration-300 border border-slate-700/50">
-            <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
-                <span class="text-xs text-purple-400 font-bold flex items-center gap-1.5">
-                    <i class="fa-solid fa-comments"></i> متن مکالمه
+    <!-- Bottom Transcript & Simulation Command Buttons -->
+    <footer class="z-10 pb-6 w-full max-w-xl px-4 flex flex-col items-center gap-3">
+        
+        <!-- Live Transcript Display -->
+        <div class="w-full glass-panel hud-border rounded-xl p-3.5 shadow-2xl text-right transition-all duration-300">
+            <div class="flex justify-between items-center mb-1.5 pb-1.5 border-b border-cyan-900/60 text-xs">
+                <span class="text-cyan-400 font-bold flex items-center gap-2 font-orbitron">
+                    <i class="fa-solid fa-terminal text-cyan-400"></i> COMMAND CONSOLE
                 </span>
-                <span id="speechConfidence" class="text-[10px] text-slate-500">موتور صوتی فعال</span>
+                <span id="voiceEngineStatus" class="text-[10px] text-slate-400">موتور صوتی فعال (صدای مردانه)</span>
             </div>
 
-            <div class="space-y-2 text-xs sm:text-sm min-h-[50px] flex flex-col justify-center">
-                <p id="userTranscript" class="text-slate-400 italic">
-                    <span class="text-indigo-400 font-bold">شما:</span> <span id="userText">هنوز چیزی نگفته‌اید...</span>
+            <div class="space-y-1.5 text-xs sm:text-sm min-h-[46px] flex flex-col justify-center">
+                <p id="userTranscript" class="text-slate-300 italic">
+                    <span class="text-cyan-400 font-bold">شما:</span> <span id="userText">منتظر شنیدن صدای شما...</span>
                 </p>
-                <p id="aiResponse" class="text-slate-200 font-medium">
-                    <span class="text-emerald-400 font-bold">هوش مصنوعی:</span> <span id="aiText">منتظر دستور شما هستم!</span>
+                <p id="jarvisResponse" class="text-slate-100 font-semibold">
+                    <span class="text-amber-400 font-bold">جارویس:</span> <span id="jarvisText">«در خدمت شما هستم قربان.»</span>
                 </p>
             </div>
         </div>
 
-        <!-- Quick Action Buttons -->
+        <!-- Command Quick Test Buttons -->
         <div class="flex flex-wrap justify-center items-center gap-2 w-full">
-            <button id="simBtnHello" class="text-xs bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/40 text-purple-200 px-3 py-1.5 rounded-xl transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-md">
-                <i class="fa-solid fa-hand-wave text-purple-400"></i> «سلام»
+            <button id="cmdGoogleBtn" class="text-xs bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
+                <i class="fa-brands fa-google text-cyan-400"></i> «جارویس گوگل باز کن»
             </button>
-            <button id="simBtnGoogle" class="text-xs bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/40 text-cyan-200 px-3 py-1.5 rounded-xl transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-md">
-                <i class="fa-brands fa-google text-cyan-400"></i> «گوگل باز کن»
+            <button id="cmdMusicBtn" class="text-xs bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
+                <i class="fa-solid fa-compact-disc text-amber-400 animate-spin" style="animation-duration:4s;"></i> «جارویس اهنگ Back in Black پخش کن»
             </button>
-            <button id="simBtnFunk" class="text-xs bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-500/40 text-emerald-200 px-3 py-1.5 rounded-xl transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-md">
-                <i class="fa-solid fa-music text-emerald-400"></i> «آهنگ فانک»
-            </button>
-            <button id="stopMusicBtn" class="text-xs bg-red-900/50 hover:bg-red-800/80 border border-red-500/60 text-red-200 px-3 py-1.5 rounded-xl transition duration-200 hidden items-center gap-1.5 active:scale-95 shadow-md animate-pulse">
-                <i class="fa-solid fa-square"></i> قطع موزیک
-            </button>
-            <button id="helpBtn" class="text-xs bg-slate-800/60 hover:bg-slate-700/60 border border-slate-600/40 text-slate-300 px-2.5 py-1.5 rounded-xl transition duration-200 flex items-center gap-1">
-                <i class="fa-solid fa-circle-question"></i> راهنما
+            <button id="cmdStopMusicBtn" class="text-xs bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 text-rose-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
+                <i class="fa-solid fa-stop text-rose-400"></i> «جارویس اهنگ قطع کن»
             </button>
         </div>
     </footer>
 
-    <!-- Help Modal -->
-    <div id="helpModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-card max-w-sm w-full rounded-2xl p-6 text-right border border-purple-500/30">
-            <h3 class="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
-                <i class="fa-solid fa-circle-info"></i> راهنمای دستورات صوتی
-            </h3>
-            <p class="text-xs text-slate-300 leading-relaxed space-y-2 mb-4">
-                ۱. روی دایره مرکزی لمس کنید تا میکروفون فعال شود.<br>
-                ۲. می‌توانید هر یک از فرمان‌های زیر را بگویید:<br>
-                &bull; <b>«سلام»</b> &larr; پاسخ گرم هوش مصنوعی<br>
-                &bull; <b>«گوگل باز کن»</b> &larr; باز کردن سایت گوگل در زبانه جدید<br>
-                &bull; <b>«یه آهنگ فانک پخش کن»</b> &larr; ساخت و پخش ریتم جذاب فانک به صورت زنده<br>
-                ۳. با دکمه‌های سریع پایین صفحه نیز می‌توانید دستورات را شبیه‌سازی کنید.
-            </p>
-            <button id="closeHelp" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-xl text-xs transition duration-200">
-                متوجه شدم
-            </button>
-        </div>
-    </div>
-
     <script>
-        const TARGET_INPUT = "سلام";
-        const AI_RESPONSE_TEXT = "سلام خوش آمدی چه کمکی از دستم بر میاد";
-
-        // DOM Element references
-        const orbButton = document.getElementById('orbButton');
+        const jarvisOrb = document.getElementById('jarvisOrb');
         const orbIcon = document.getElementById('orbIcon');
         const orbStatusText = document.getElementById('orbStatusText');
-        const statusBadge = document.getElementById('statusBadge');
+        const statusHUD = document.getElementById('statusHUD');
         const statusDot = document.getElementById('statusDot');
         const statusMessage = document.getElementById('statusMessage');
         const userText = document.getElementById('userText');
-        const aiText = document.getElementById('aiText');
-        const simBtnHello = document.getElementById('simBtnHello');
-        const simBtnGoogle = document.getElementById('simBtnGoogle');
-        const simBtnFunk = document.getElementById('simBtnFunk');
-        const stopMusicBtn = document.getElementById('stopMusicBtn');
-        const helpBtn = document.getElementById('helpBtn');
-        const helpModal = document.getElementById('helpModal');
-        const closeHelp = document.getElementById('closeHelp');
-        const ring1 = document.getElementById('ring1');
-        const ring2 = document.getElementById('ring2');
-        const ring3 = document.getElementById('ring3');
+        const jarvisText = document.getElementById('jarvisText');
 
-        // State Machine
+        const cmdGoogleBtn = document.getElementById('cmdGoogleBtn');
+        const cmdMusicBtn = document.getElementById('cmdMusicBtn');
+        const cmdStopMusicBtn = document.getElementById('cmdStopMusicBtn');
+
         let currentState = 'idle';
         let recognition = null;
-        let currentAudioSource = null;
-
-        let funkAudioCtx = null;
-        let funkInterval = null;
-        let isFunkPlaying = false;
+        let isMusicPlaying = false;
+        let rockAudioCtx = null;
+        let musicTimer = null;
 
         function setState(newState) {
             currentState = newState;
-            orbButton.className = orbButton.className.replace(/orb-(idle|listening|speaking)/g, '');
+            jarvisOrb.className = jarvisOrb.className.replace(/arc-reactor-(idle|listening|speaking)/g, '');
 
             if (newState === 'idle') {
-                orbButton.classList.add('orb-idle');
-                orbIcon.className = 'fa-solid fa-microphone text-4xl sm:text-5xl text-white transition-all duration-300 drop-shadow-md';
-                orbStatusText.textContent = 'لمس کنید';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-400';
-                statusMessage.textContent = 'آماده برای دریافت دستورات صوتی شما';
-                ring1.classList.remove('active-wave');
-                ring2.classList.remove('active-wave');
-                ring3.classList.remove('active-wave');
+                jarvisOrb.classList.add('arc-reactor-idle');
+                orbIcon.className = 'fa-solid fa-microchip text-4xl sm:text-5xl text-cyan-100 transition-all duration-300 group-hover:scale-110';
+                orbStatusText.textContent = 'READY';
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse';
+                statusMessage.textContent = 'آماده دریافت دستور صوتی شما';
             } else if (newState === 'listening') {
-                orbButton.classList.add('orb-listening');
-                orbIcon.className = 'fa-solid fa-waveform text-4xl sm:text-5xl text-white animate-bounce';
-                orbStatusText.textContent = 'در حال شنیدن...';
+                jarvisOrb.classList.add('arc-reactor-listening');
+                orbIcon.className = 'fa-solid fa-microphone text-4xl sm:text-5xl text-red-200 animate-pulse';
+                orbStatusText.textContent = 'LISTENING...';
                 statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 animate-ping';
-                statusMessage.textContent = 'در حال گوش دادن به صدای شما... صحبت کنید';
-                ring1.classList.add('active-wave');
-                ring2.classList.add('active-wave');
-                ring3.classList.add('active-wave');
+                statusMessage.textContent = 'جارویس در حال گوش دادن به صدای شما است...';
             } else if (newState === 'processing') {
-                orbButton.classList.add('orb-idle');
-                orbIcon.className = 'fa-solid fa-spinner text-4xl sm:text-5xl text-white animate-spin';
-                orbStatusText.textContent = 'پردازش...';
+                jarvisOrb.classList.add('arc-reactor-idle');
+                orbIcon.className = 'fa-solid fa-rotate text-4xl sm:text-5xl text-cyan-200 animate-spin';
+                orbStatusText.textContent = 'PROCESSING';
                 statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse';
-                statusMessage.textContent = 'در حال تحلیل دستور صوتی...';
+                statusMessage.textContent = 'در حال تحلیل فرمایش شما...';
             } else if (newState === 'speaking') {
-                orbButton.classList.add('orb-speaking');
-                orbIcon.className = 'fa-solid fa-volume-high text-4xl sm:text-5xl text-white animate-pulse';
-                orbStatusText.textContent = 'در حال پاسخ...';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
-                statusMessage.textContent = 'هوش مصنوعی در حال صحبت است';
-                ring1.classList.add('active-wave');
-                ring2.classList.add('active-wave');
-                ring3.classList.add('active-wave');
+                jarvisOrb.classList.add('arc-reactor-speaking');
+                orbIcon.className = 'fa-solid fa-volume-high text-4xl sm:text-5xl text-amber-200 animate-bounce';
+                orbStatusText.textContent = 'JARVIS SPEAKING';
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+                statusMessage.textContent = 'جارویس در حال صحبت کردن است';
             }
         }
 
-        function pcmToWav(pcmData, sampleRate) {
-            const buffer = new ArrayBuffer(44 + pcmData.length * 2);
-            const view = new DataView(buffer);
+        function speakJarvis(text, onComplete) {
+            setState('speaking');
 
-            function writeString(offset, string) {
-                for (let i = 0; i < string.length; i++) {
-                    view.setUint8(offset + i, string.charCodeAt(i));
-                }
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fa-IR';
+            
+            // Deep male pitch & deliberate authoritative rate
+            utterance.pitch = 0.65; // Deep pitch for Jarvis male voice
+            utterance.rate = 0.88;  // Calm, confident speed
+
+            // Attempt to pick a male voice if available in system
+            const voices = window.speechSynthesis.getVoices();
+            const maleVoice = voices.find(v => 
+                v.lang.includes('fa') || 
+                v.name.toLowerCase().includes('male') || 
+                v.name.toLowerCase().includes('david') || 
+                v.name.toLowerCase().includes('george')
+            );
+            if (maleVoice) {
+                utterance.voice = maleVoice;
             }
 
-            writeString(0, 'RIFF');
-            view.setUint32(4, 36 + pcmData.length * 2, true);
-            writeString(8, 'WAVE');
-            writeString(12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); // PCM format
-            view.setUint16(22, 1, true); // Mono channel
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true);
-            view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true);
-            writeString(36, 'data');
-            view.setUint32(40, pcmData.length * 2, true);
+            utterance.onend = () => {
+                setState('idle');
+                if (typeof onComplete === 'function') onComplete();
+            };
 
-            let offset = 44;
-            for (let i = 0; i < pcmData.length; i++, offset += 2) {
-                view.setInt16(offset, pcmData[i], true);
-            }
+            utterance.onerror = () => {
+                setState('idle');
+                if (typeof onComplete === 'function') onComplete();
+            };
 
-            return new Blob([buffer], { type: 'audio/wav' });
+            window.speechSynthesis.speak(utterance);
         }
 
-        function stopFunkMusic() {
-            if (funkInterval) {
-                clearInterval(funkInterval);
-                funkInterval = null;
-            }
-            if (funkAudioCtx) {
-                funkAudioCtx.close().catch(() => {});
-                funkAudioCtx = null;
-            }
-            isFunkPlaying = false;
-            if (stopMusicBtn) stopMusicBtn.classList.add('hidden');
+        // Pre-load voices for Speech Synthesis
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
         }
 
-        function playFunkMusic() {
-            stopFunkMusic();
+        function stopBackInBlackMusic() {
+            if (musicTimer) {
+                clearInterval(musicTimer);
+                musicTimer = null;
+            }
+            if (rockAudioCtx) {
+                rockAudioCtx.close().catch(() => {});
+                rockAudioCtx = null;
+            }
+            isMusicPlaying = false;
+        }
+
+        function playBackInBlackMusic() {
+            stopBackInBlackMusic();
 
             try {
-                funkAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (funkAudioCtx.state === 'suspended') {
-                    funkAudioCtx.resume();
+                rockAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (rockAudioCtx.state === 'suspended') {
+                    rockAudioCtx.resume();
                 }
             } catch (e) {
-                console.error("Audio Context creation failed", e);
+                console.error("Audio Context initialization failed:", e);
                 return;
             }
 
-            isFunkPlaying = true;
-            if (stopMusicBtn) stopMusicBtn.classList.remove('hidden');
+            isMusicPlaying = true;
 
-            const tempo = 116; 
-            const stepTime = (60 / tempo) / 4; 
+            const tempo = 94; // Iconic Back in Black tempo
+            const stepDuration = (60 / tempo) / 4; 
             let step = 0;
 
-            const bassScale = [82.41, 98.00, 110.00, 123.47, 146.83];
-            const bassPattern = [0, -1, 0, 1, -1, 2, 0, -1, 3, 0, -1, 2, 1, 0, 4, -1];
-            const chordEMin = [164.81, 196.00, 246.94, 293.66];
-            const chordA7   = [174.61, 220.00, 261.63, 329.63];
+            // Frequencies for E5, D5, A5 chords
+            const freqE = [164.81, 246.94, 329.63]; // E chord
+            const freqD = [146.83, 220.00, 293.66]; // D chord
+            const freqA = [110.00, 220.00, 277.18]; // A chord
 
-            funkInterval = setInterval(() => {
-                if (!funkAudioCtx || funkAudioCtx.state === 'closed') return;
-                const now = funkAudioCtx.currentTime;
+            // Pentatonic Fill Notes (E, D, C#, B, G)
+            const fillNotes = [329.63, 293.66, 277.18, 246.94, 196.00, 164.81];
 
-                // 1. Kick Drum
-                if ([0, 4, 8, 10, 12].includes(step % 16)) {
-                    const osc = funkAudioCtx.createOscillator();
-                    const gain = funkAudioCtx.createGain();
-                    osc.frequency.setValueAtTime(130, now);
-                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
-                    gain.gain.setValueAtTime(1, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            // Distortion Curve generator for Electric Guitar effect
+            function makeDistortionCurve(amount) {
+                const k = typeof amount === 'number' ? amount : 50;
+                const n_samples = 44100;
+                const curve = new Float32Array(n_samples);
+                const deg = Math.PI / 180;
+                for (let i = 0; i < n_samples; ++i) {
+                    const x = (i * 2) / n_samples - 1;
+                    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+                }
+                return curve;
+            }
+
+            const distNode = rockAudioCtx.createWaveShaper();
+            distNode.curve = makeDistortionCurve(100);
+            distNode.oversample = '4x';
+
+            const masterGain = rockAudioCtx.createGain();
+            masterGain.gain.value = 0.3;
+
+            distNode.connect(masterGain);
+            masterGain.connect(rockAudioCtx.destination);
+
+            function playGuitarChord(freqArray, time, duration) {
+                freqArray.forEach(freq => {
+                    const osc = rockAudioCtx.createOscillator();
+                    const gain = rockAudioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, time);
+
+                    gain.gain.setValueAtTime(0.4, time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
                     osc.connect(gain);
-                    gain.connect(funkAudioCtx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.12);
+                    gain.connect(distNode);
+
+                    osc.start(time);
+                    osc.stop(time + duration);
+                });
+            }
+
+            musicTimer = setInterval(() => {
+                if (!rockAudioCtx || rockAudioCtx.state === 'closed') return;
+                const now = rockAudioCtx.currentTime;
+                const currentStep = step % 32;
+
+                // 1. Classic Rock Drums (Kick & Snare & Hat)
+                if ([0, 4, 8, 12, 16, 20, 24, 28].includes(currentStep)) {
+                    // Kick Drum
+                    const kick = rockAudioCtx.createOscillator();
+                    const kickGain = rockAudioCtx.createGain();
+                    kick.frequency.setValueAtTime(150, now);
+                    kick.frequency.exponentialRampToValueAtTime(35, now + 0.15);
+                    kickGain.gain.setValueAtTime(1, now);
+                    kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    kick.connect(kickGain);
+                    kickGain.connect(rockAudioCtx.destination);
+                    kick.start(now);
+                    kick.stop(now + 0.15);
                 }
 
-                // 2. Snare Drum
-                if ([4, 12].includes(step % 16)) {
-                    const noise = funkAudioCtx.createBufferSource();
-                    const buffer = funkAudioCtx.createBuffer(1, Math.max(1, Math.floor(funkAudioCtx.sampleRate * 0.1)), funkAudioCtx.sampleRate);
-                    const data = buffer.getChannelData(0);
-                    for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
-                    noise.buffer = buffer;
+                if ([4, 12, 20, 28].includes(currentStep)) {
+                    // Snare Drum
+                    const noise = rockAudioCtx.createBufferSource();
+                    const buf = rockAudioCtx.createBuffer(1, Math.max(1, Math.floor(rockAudioCtx.sampleRate * 0.12)), rockAudioCtx.sampleRate);
+                    const data = buf.getChannelData(0);
+                    for (let i = 0; i < buf.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buf;
 
-                    const filter = funkAudioCtx.createBiquadFilter();
-                    filter.type = 'highpass';
-                    filter.frequency.value = 1000;
+                    const snareGain = rockAudioCtx.createGain();
+                    snareGain.gain.setValueAtTime(0.6, now);
+                    snareGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
 
-                    const gain = funkAudioCtx.createGain();
-                    gain.gain.setValueAtTime(0.5, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-
-                    noise.connect(filter);
-                    filter.connect(gain);
-                    gain.connect(funkAudioCtx.destination);
+                    noise.connect(snareGain);
+                    snareGain.connect(rockAudioCtx.destination);
                     noise.start(now);
-                    noise.stop(now + 0.15);
+                    noise.stop(now + 0.12);
                 }
 
-                // 3. Hi-Hat
-                const hat = funkAudioCtx.createBufferSource();
-                const hatBuf = funkAudioCtx.createBuffer(1, Math.max(1, Math.floor(funkAudioCtx.sampleRate * 0.04)), funkAudioCtx.sampleRate);
-                const hatData = hatBuf.getChannelData(0);
-                for (let i = 0; i < hatBuf.length; i++) hatData[i] = Math.random() * 2 - 1;
-                hat.buffer = hatBuf;
-                const hatFilter = funkAudioCtx.createBiquadFilter();
-                hatFilter.type = 'highpass';
-                hatFilter.frequency.value = 6000;
-                const hatGain = funkAudioCtx.createGain();
-                const vol = (step % 2 === 0) ? 0.25 : 0.12;
-                hatGain.gain.setValueAtTime(vol, now);
-                hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-                hat.connect(hatFilter);
-                hatFilter.connect(hatGain);
-                hatGain.connect(funkAudioCtx.destination);
-                hat.start(now);
-                hat.stop(now + 0.04);
-
-                // 4. Slap Bassline
-                const bassIdx = bassPattern[step % 16];
-                if (bassIdx !== -1) {
-                    const bassFreq = bassScale[bassIdx];
-                    const bassOsc = funkAudioCtx.createOscillator();
-                    const bassGain = funkAudioCtx.createGain();
-                    const bassFilter = funkAudioCtx.createBiquadFilter();
-
-                    bassOsc.type = 'sawtooth';
-                    bassOsc.frequency.setValueAtTime(bassFreq, now);
-
-                    bassFilter.type = 'lowpass';
-                    bassFilter.frequency.setValueAtTime(1800, now);
-                    bassFilter.frequency.exponentialRampToValueAtTime(300, now + 0.18);
-
-                    bassGain.gain.setValueAtTime(0.45, now);
-                    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-
-                    bassOsc.connect(bassFilter);
-                    bassFilter.connect(bassGain);
-                    bassGain.connect(funkAudioCtx.destination);
-                    bassOsc.start(now);
-                    bassOsc.stop(now + 0.2);
-                }
-
-                // 5. Funky Synth Stab
-                if ([2, 6, 10, 14].includes(step % 16)) {
-                    const chordNotes = (step % 16 < 8) ? chordEMin : chordA7;
-                    chordNotes.forEach(freq => {
-                        const synthOsc = funkAudioCtx.createOscillator();
-                        const synthGain = funkAudioCtx.createGain();
-                        synthOsc.type = 'triangle';
-                        synthOsc.frequency.setValueAtTime(freq, now);
-
-                        synthGain.gain.setValueAtTime(0.1, now);
-                        synthGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-
-                        synthOsc.connect(synthGain);
-                        synthGain.connect(funkAudioCtx.destination);
-                        synthOsc.start(now);
-                        synthOsc.stop(now + 0.14);
-                    });
+                // 2. Iconic "Back in Black" Guitar Chords & Solo Fill
+                if (currentStep === 0) {
+                    playGuitarChord(freqE, now, 0.4); // E Chord hit 1
+                } else if (currentStep === 6) {
+                    playGuitarChord(freqD, now, 0.25); // D Chord hit 1
+                } else if (currentStep === 8) {
+                    playGuitarChord(freqD, now, 0.25); // D Chord hit 2
+                } else if (currentStep === 10) {
+                    playGuitarChord(freqD, now, 0.25); // D Chord hit 3
+                } else if (currentStep === 12) {
+                    playGuitarChord(freqA, now, 0.25); // A Chord hit 1
+                } else if (currentStep === 14) {
+                    playGuitarChord(freqA, now, 0.25); // A Chord hit 2
+                } else if (currentStep === 16) {
+                    playGuitarChord(freqA, now, 0.25); // A Chord hit 3
+                } else if (currentStep >= 24 && currentStep <= 30) {
+                    // Pentatonic Guitar Riff Fill
+                    const noteIdx = (currentStep - 24) / 2;
+                    if (Number.isInteger(noteIdx) && noteIdx < fillNotes.length) {
+                        playGuitarChord([fillNotes[noteIdx]], now, 0.18);
+                    }
                 }
 
                 step++;
-            }, stepTime * 1000);
+            }, stepDuration * 1000);
         }
 
-        function handleUserSpeech(text) {
-            stopFunkMusic();
+        function processCommand(text) {
             setState('processing');
-            
-            const cleanedText = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim().toLowerCase();
-            
-            const containsHello = cleanedText.includes('سلام') || cleanedText.includes('صلوات') || cleanedText.includes('سلامون');
-            const containsGoogle = cleanedText.includes('گوگل') || cleanedText.includes('گوگلم') || cleanedText.includes('google');
-            const containsFunk = cleanedText.includes('فانک') || cleanedText.includes('اهنگ') || cleanedText.includes('آهنگ') || cleanedText.includes('موزیک');
+            const cleanText = text.trim().toLowerCase();
 
-            if (containsGoogle) {
-                const responseText = "در حال باز کردن گوگل برای شما...";
-                aiText.textContent = `«${responseText}»`;
-                speakAIResponse(responseText, () => {
+            // Command 1: Open Google ("جارویس گوگل باز کن")
+            const isGoogleCmd = cleanText.includes('گوگل') || cleanText.includes('google');
+            
+            // Command 2: Play Back in Black ("جارویس اهنگ back in black پخش کن")
+            const isMusicPlayCmd = (cleanText.includes('اهنگ') || cleanText.includes('آهنگ') || cleanText.includes('موزیک') || cleanText.includes('پخش')) && 
+                                   (cleanText.includes('پخش') || cleanText.includes('black') || cleanText.includes('بلک') || cleanText.includes('بک'));
+            
+            // Command 3: Stop Music ("جارویس اهنگ قطع کن")
+            const isMusicStopCmd = (cleanText.includes('اهنگ') || cleanText.includes('آهنگ') || cleanText.includes('موزیک')) && 
+                                   (cleanText.includes('قطع') || cleanText.includes('خاموش') || cleanText.includes('ببند') || cleanText.includes('استپ') || cleanText.includes('متوقف'));
+
+            if (isMusicStopCmd) {
+                stopBackInBlackMusic();
+                const resp = "بله قربان اهنگ قطع شد";
+                jarvisText.textContent = `«${resp}»`;
+                speakJarvis(resp);
+            }
+            else if (isGoogleCmd) {
+                stopBackInBlackMusic();
+                const firstResp = "بله قربان";
+                jarvisText.textContent = `«${firstResp}»`;
+                
+                // First Say "بله قربان", then open Google, then say "گوگل باز شد قربان"
+                speakJarvis(firstResp, () => {
                     window.open('https://www.google.com', '_blank');
+                    
+                    setTimeout(() => {
+                        const secondResp = "گوگل باز شد قربان";
+                        jarvisText.textContent = `«${secondResp}»`;
+                        speakJarvis(secondResp);
+                    }, 400);
                 });
-            } else if (containsFunk) {
-                const responseText = "در حال پخش آهنگ فانک! امیدوارم لذت ببری.";
-                aiText.textContent = `«${responseText}»`;
-                speakAIResponse(responseText, () => {
-                    playFunkMusic();
+            } 
+            else if (isMusicPlayCmd) {
+                const resp = "بله قربان اهنگ پخش شد";
+                jarvisText.textContent = `«${resp}»`;
+                speakJarvis(resp, () => {
+                    playBackInBlackMusic();
                 });
-            } else if (containsHello) {
-                const responseText = AI_RESPONSE_TEXT;
-                aiText.textContent = `«${responseText}»`;
-                speakAIResponse(responseText);
-            } else {
-                const politeReject = "دستور متوجه نشدم. می‌توانید بگوئید «سلام»، «گوگل باز کن» یا «یه آهنگ فانک پخش کن».";
-                aiText.textContent = politeReject;
-                speakAIResponse(politeReject);
-            }
-        }
-
-        async function speakAIResponse(textToSpeak, onComplete) {
-            setState('speaking');
-
-            const finishSpeaking = () => {
-                setState('idle');
-                if (typeof onComplete === 'function') {
-                    onComplete();
-                }
-            };
-
-            try {
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-
-                const payload = {
-                    contents: [{
-                        parts: [{ text: `با لحن گرم و مهربان فارسی بگو: ${textToSpeak}` }]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: { voiceName: "Sulafat" }
-                            }
-                        }
-                    },
-                    model: "gemini-2.5-flash-preview-tts"
-                };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API response status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                const part = result?.candidates?.[0]?.content?.parts?.[0];
-                const base64Audio = part?.inlineData?.data;
-                const mimeType = part?.inlineData?.mimeType || "";
-
-                if (base64Audio) {
-                    const rateMatch = mimeType.match(/rate=(\d+)/);
-                    const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
-
-                    const binaryString = atob(base64Audio);
-                    const len = binaryString.length;
-                    const bytes = new Uint8Array(len);
-                    for (let i = 0; i < len; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-
-                    const pcm16 = new Int16Array(bytes.buffer);
-                    const wavBlob = pcmToWav(pcm16, sampleRate);
-                    const audioUrl = URL.createObjectURL(wavBlob);
-
-                    const audio = new Audio(audioUrl);
-                    currentAudioSource = audio;
-
-                    audio.onended = () => finishSpeaking();
-                    audio.onerror = () => fallbackWebSpeech(textToSpeak, finishSpeaking);
-
-                    await audio.play();
-                } else {
-                    fallbackWebSpeech(textToSpeak, finishSpeaking);
-                }
-
-            } catch (err) {
-                console.warn('Gemini TTS direct API call failed, using Web Speech Synthesis fallback:', err);
-                fallbackWebSpeech(textToSpeak, finishSpeaking);
-            }
-        }
-
-        function fallbackWebSpeech(textToSpeak, onComplete) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                utterance.lang = 'fa-IR';
-                utterance.rate = 0.95;
-
-                utterance.onend = () => {
-                    if (typeof onComplete === 'function') onComplete();
-                    else setState('idle');
-                };
-
-                utterance.onerror = () => {
-                    if (typeof onComplete === 'function') onComplete();
-                    else setState('idle');
-                };
-
-                window.speechSynthesis.speak(utterance);
-            } else {
-                if (typeof onComplete === 'function') onComplete();
-                else setState('idle');
+            } 
+            else {
+                // Fallback greeting or general guidance
+                stopBackInBlackMusic();
+                const defaultResp = "در خدمت شما هستم قربان. می‌توانید دستورات «گوگل باز کن»، «آهنگ Back in Black پخش کن» یا «آهنگ قطع کن» را بگویید.";
+                jarvisText.textContent = `«${defaultResp}»`;
+                speakJarvis(defaultResp);
             }
         }
 
@@ -593,12 +520,12 @@
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 userText.textContent = `«${transcript}»`;
-                handleUserSpeech(transcript);
+                processCommand(transcript);
             };
 
             recognition.onerror = (event) => {
                 console.warn('Speech recognition error:', event.error);
-                statusMessage.textContent = 'خطا در دریافت صدا! می‌توانید از دکمه‌های شبیه‌سازی پایین استفاده کنید.';
+                statusMessage.textContent = 'دستور شنیده نشد. از دکمه‌های تست پایین نیز می‌توانید استفاده کنید.';
                 setState('idle');
             };
 
@@ -607,14 +534,12 @@
                     setState('idle');
                 }
             };
+        } else {
+            statusMessage.textContent = 'مرورگر شما از میکروفون صوتی مستقیم پشتیبانی نمی‌کند، می‌توانید از دکمه‌های شبیه‌سازی پایین استفاده کنید.';
         }
 
-        orbButton.addEventListener('click', () => {
-            stopFunkMusic();
+        jarvisOrb.addEventListener('click', () => {
             if (currentState === 'speaking') {
-                if (currentAudioSource) {
-                    currentAudioSource.pause();
-                }
                 window.speechSynthesis?.cancel();
                 setState('idle');
                 return;
@@ -634,31 +559,23 @@
                     setTimeout(() => recognition.start(), 200);
                 }
             } else {
-                simulateSpeechInput(TARGET_INPUT);
+                // Simulation fallback
+                simulateInput("جارویس گوگل باز کن");
             }
         });
 
-        simBtnHello?.addEventListener('click', () => simulateSpeechInput("سلام"));
-        simBtnGoogle?.addEventListener('click', () => simulateSpeechInput("گوگل باز کن"));
-        simBtnFunk?.addEventListener('click', () => simulateSpeechInput("یه آهنگ فانک پخش کن"));
-        stopMusicBtn?.addEventListener('click', () => stopFunkMusic());
+        // Test Buttons Logic
+        cmdGoogleBtn.addEventListener('click', () => simulateInput("جارویس گوگل باز کن"));
+        cmdMusicBtn.addEventListener('click', () => simulateInput("جارویس اهنگ black in black پخش کن"));
+        cmdStopMusicBtn.addEventListener('click', () => simulateInput("جارویس اهنگ قطع کن"));
 
-        function simulateSpeechInput(text) {
-            stopFunkMusic();
+        function simulateInput(text) {
             if (currentState === 'speaking') {
-                if (currentAudioSource) currentAudioSource.pause();
                 window.speechSynthesis?.cancel();
             }
-            userText.textContent = `«${text}» (کلیک روی دکمه)`;
-            handleUserSpeech(text);
+            userText.textContent = `«${text}» (دستور دکمه تست)`;
+            processCommand(text);
         }
-
-        // Help Modal Controls
-        helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
-        closeHelp.addEventListener('click', () => helpModal.classList.add('hidden'));
-        helpModal.addEventListener('click', (e) => {
-            if (e.target === helpModal) helpModal.classList.add('hidden');
-        });
 
         const canvas = document.getElementById('bgCanvas');
         const ctx = canvas.getContext('2d');
@@ -678,10 +595,10 @@
             reset() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 0.5;
-                this.speedX = (Math.random() - 0.5) * 0.4;
-                this.speedY = (Math.random() - 0.5) * 0.4;
-                this.alpha = Math.random() * 0.5 + 0.2;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.alpha = Math.random() * 0.6 + 0.2;
             }
             update() {
                 this.x += this.speedX;
@@ -691,14 +608,14 @@
                 }
             }
             draw() {
-                ctx.fillStyle = `rgba(147, 51, 234, ${this.alpha})`;
+                ctx.fillStyle = `rgba(6, 182, 212, ${this.alpha})`;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 50; i++) {
             particles.push(new Particle());
         }
 
@@ -712,7 +629,7 @@
         }
         animateCanvas();
 
-        // Initialize state
+        // Initial launch state
         setState('idle');
     </script>
 </body>
