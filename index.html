@@ -140,6 +140,11 @@
           <button id="btnEndCall" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg shadow-rose-600/30 transition hidden flex items-center justify-center gap-2">
             <i class="fa-solid fa-phone-slash"></i> قطع تماس صوتی
           </button>
+
+          <!-- دکمه تنظیمات فایربیس برای گیت‌هاب -->
+          <button id="btnOpenConfigModal" class="text-xs text-slate-400 hover:text-indigo-300 underline text-center mt-2">
+            تنظیمات پایگاه‌داده (مخصوص گیت‌هاب)
+          </button>
         </div>
       </div>
 
@@ -206,11 +211,41 @@
 
   </div>
 
+  <!-- مودال تنظیمات فایربیس برای گیت‌هاب -->
+  <div id="configModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-lg w-full p-6 rounded-2xl flex flex-col gap-4 border border-indigo-500/30">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-indigo-300 flex items-center gap-2">
+          <i class="fa-solid fa-sliders"></i> تنظیمات فایربیس (Firebase Config)
+        </h3>
+        <button id="btnCloseConfigModal" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        برای اجرا روی <b>گیت‌هاب</b> یا دامنه اختصاصی، باید کد تنظیمات پروژه‌ی <b>Firebase</b> خود را به‌صورت کد JSON وارد کنید تا پایگاه‌داده و اتصال صوتی فعال شود:
+      </p>
+      <textarea id="inputConfigJson" rows="6" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}' class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs font-mono text-indigo-300 focus:outline-none focus:border-indigo-500"></textarea>
+      <div class="flex gap-2 justify-end">
+        <button id="btnSaveConfig" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+          ذخیره و راه‌اندازی مجدد
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- عنصر صوتی مخفی برای دریافت صدای مخاطب -->
   <audio id="remoteAudio" autoplay></audio>
 
   <!-- پیام اعلان سفارشی (Modal/Toast) -->
-  <div id="toastNotification" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-2xl transition transform translate-y-20 opacity-0 flex items-center gap-3">
+  <div id="toastNotification" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-2xl transition transform translate-y-20 opacity-0 flex items-center gap-3 z-50">
     <i class="fa-solid fa-info-circle text-lg"></i>
     <span id="toastText">پیام سیستم</span>
   </div>
@@ -219,14 +254,39 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // تنظیمات پایگاه داده متصل به سیستم Canvas
-    const firebaseConfig = JSON.parse(__firebase_config);
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    // دریافت ایمن تنظیمات فایربیس (چه در Canvas و چه در گیت‌هاب)
+    function getFirebaseConfig() {
+      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        try {
+          return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+        } catch(e) {}
+      }
+      const savedConfig = localStorage.getItem('custom_firebase_config');
+      if (savedConfig) {
+        try {
+          return JSON.parse(savedConfig);
+        } catch(e) {}
+      }
+      return null;
+    }
+
+    const firebaseConfig = getFirebaseConfig();
+    let app = null;
+    let auth = null;
+    let db = null;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'voice-chat-app';
+
+    if (firebaseConfig) {
+      try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+      } catch (e) {
+        console.error("خطا در بارگذاری فایربیس:", e);
+      }
+    }
 
     // متغیرهای وضعیت برنامه‌نویسی
     let currentUser = null;
@@ -235,7 +295,7 @@
     let currentRoomId = null;
     let isMicMuted = false;
     let isSpeakerMuted = false;
-    let myRole = null; // 'caller' یا 'callee'
+    let myRole = null; // 'X' یا 'O'
 
     // پیکربندی سرورهای STUN برای ارتباط مستقیم WebRTC
     const rtcConfig = {
@@ -262,9 +322,44 @@
     const gameTurnText = document.getElementById('gameTurnText');
     const gameCells = document.querySelectorAll('.game-cell');
     const btnResetGame = document.getElementById('btnResetGame');
+    const configModal = document.getElementById('configModal');
+    const btnOpenConfigModal = document.getElementById('btnOpenConfigModal');
+    const btnCloseConfigModal = document.getElementById('btnCloseConfigModal');
+    const btnSaveConfig = document.getElementById('btnSaveConfig');
+    const inputConfigJson = document.getElementById('inputConfigJson');
+
+    // مدیریت مودال تنظیمات فایربیس
+    btnOpenConfigModal.addEventListener('click', () => {
+      configModal.classList.remove('hidden');
+    });
+    btnCloseConfigModal.addEventListener('click', () => {
+      configModal.classList.add('hidden');
+    });
+    btnSaveConfig.addEventListener('click', () => {
+      try {
+        const val = inputConfigJson.value.trim();
+        JSON.parse(val); // تست ولید بودن
+        localStorage.setItem('custom_firebase_config', val);
+        showToast('تنظیمات ذخیره شد! درحال بارگذاری مجدد...');
+        setTimeout(() => location.reload(), 1000);
+      } catch (err) {
+        showToast('فرمت JSON وارد شده نامعتبر است!');
+      }
+    });
+
+    // بررسی آمادگی پایگاه‌داده
+    function checkDatabaseReady() {
+      if (!db || !auth) {
+        configModal.classList.remove('hidden');
+        showToast('لطفاً اطلاعات فایربیس را وارد کنید.');
+        return false;
+      }
+      return true;
+    }
 
     // ۱. احراز هویت اولیه
     async function initAuth() {
+      if (!auth) return;
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
@@ -277,11 +372,13 @@
     }
     initAuth();
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-      }
-    });
+    if (auth) {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          currentUser = user;
+        }
+      });
+    }
 
     // نمایش اعلان خودکار
     function showToast(message) {
@@ -308,7 +405,7 @@
 
     // ۳. ساخت اتاق و تماس صوتی (Caller)
     btnCreateRoom.addEventListener('click', async () => {
-      if (!currentUser) return;
+      if (!checkDatabaseReady()) return;
       try {
         const stream = await getMicrophone();
         myRole = 'X';
@@ -339,7 +436,7 @@
 
         const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
         
-        // ذخيره کاندیداهای ICE
+        // ذخیره کاندیداهای ICE
         peerConnection.onicecandidate = async (event) => {
           if (event.candidate) {
             const callerCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'callerCandidates');
@@ -387,8 +484,9 @@
 
     // ۴. ورود به اتاق با کد (Callee)
     btnJoinRoom.addEventListener('click', async () => {
+      if (!checkDatabaseReady()) return;
       const code = inputRoomCode.value.trim();
-      if (!code || !currentUser) {
+      if (!code) {
         showToast('لطفا کد اتاق را وارد کنید.');
         return;
       }
@@ -548,6 +646,7 @@
         cell.innerText = state.board[idx];
         if(state.board[idx] === 'X') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 h-20";
         if(state.board[idx] === 'O') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center text-pink-400 h-20";
+        if(state.board[idx] === '') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20";
       });
 
       if (state.winner) {
