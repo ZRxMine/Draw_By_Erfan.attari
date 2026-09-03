@@ -199,14 +199,17 @@
 
         <!-- Command Quick Test Buttons -->
         <div class="flex flex-wrap justify-center items-center gap-2 w-full">
+            <button id="cmdHelloBtn" class="text-xs bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
+                <i class="fa-solid fa-hand text-emerald-400"></i> «سلام»
+            </button>
             <button id="cmdGoogleBtn" class="text-xs bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
-                <i class="fa-brands fa-google text-cyan-400"></i> «جارویس گوگل باز کن»
+                <i class="fa-brands fa-google text-cyan-400"></i> «گوگل باز کن»
             </button>
             <button id="cmdMusicBtn" class="text-xs bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
-                <i class="fa-solid fa-compact-disc text-amber-400 animate-spin" style="animation-duration:4s;"></i> «جارویس اهنگ Back in Black پخش کن»
+                <i class="fa-solid fa-compact-disc text-amber-400 animate-spin" style="animation-duration:4s;"></i> «اهنگ پخش کن»
             </button>
             <button id="cmdStopMusicBtn" class="text-xs bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 text-rose-200 px-3 py-2 rounded-lg transition duration-200 flex items-center gap-1.5 active:scale-95 shadow-lg">
-                <i class="fa-solid fa-stop text-rose-400"></i> «جارویس اهنگ قطع کن»
+                <i class="fa-solid fa-stop text-rose-400"></i> «اهنگ قطع کن»
             </button>
         </div>
     </footer>
@@ -221,6 +224,7 @@
         const userText = document.getElementById('userText');
         const jarvisText = document.getElementById('jarvisText');
 
+        const cmdHelloBtn = document.getElementById('cmdHelloBtn');
         const cmdGoogleBtn = document.getElementById('cmdGoogleBtn');
         const cmdMusicBtn = document.getElementById('cmdMusicBtn');
         const cmdStopMusicBtn = document.getElementById('cmdStopMusicBtn');
@@ -264,6 +268,11 @@
 
         function speakJarvis(text, onComplete) {
             setState('speaking');
+
+            // Temporarily pause speech recognition while Jarvis speaks to prevent audio feedback loop
+            if (recognition) {
+                try { recognition.stop(); } catch(e){}
+            }
 
             // Cancel any ongoing speech
             window.speechSynthesis.cancel();
@@ -457,18 +466,26 @@
             setState('processing');
             const cleanText = text.trim().toLowerCase();
 
+            // Command 0: Greeting ("سلام")
+            const isGreetingCmd = cleanText.includes('سلام') || cleanText.includes('درود') || cleanText.includes('چطوری');
+
             // Command 1: Open Google ("جارویس گوگل باز کن")
             const isGoogleCmd = cleanText.includes('گوگل') || cleanText.includes('google');
             
-            // Command 2: Play Back in Black ("جارویس اهنگ back in black پخش کن")
-            const isMusicPlayCmd = (cleanText.includes('اهنگ') || cleanText.includes('آهنگ') || cleanText.includes('موزیک') || cleanText.includes('پخش')) && 
-                                   (cleanText.includes('پخش') || cleanText.includes('black') || cleanText.includes('بلک') || cleanText.includes('بک'));
-            
-            // Command 3: Stop Music ("جارویس اهنگ قطع کن")
-            const isMusicStopCmd = (cleanText.includes('اهنگ') || cleanText.includes('آهنگ') || cleanText.includes('موزیک')) && 
-                                   (cleanText.includes('قطع') || cleanText.includes('خاموش') || cleanText.includes('ببند') || cleanText.includes('استپ') || cleanText.includes('متوقف'));
+            // Command 2: Stop Music ("جارویس اهنگ قطع کن")
+            const isMusicStopCmd = cleanText.includes('قطع') || cleanText.includes('خاموش') || cleanText.includes('استپ') || cleanText.includes('متوقف') || cleanText.includes('ببند');
 
-            if (isMusicStopCmd) {
+            // Command 3: Play Back in Black ("جارویس اهنگ back in black پخش کن")
+            const isMusicPlayCmd = cleanText.includes('black') || cleanText.includes('بلک') || cleanText.includes('بک') || 
+                                   ((cleanText.includes('اهنگ') || cleanText.includes('آهنگ') || cleanText.includes('موزیک')) && cleanText.includes('پخش'));
+
+            if (isGreetingCmd) {
+                stopBackInBlackMusic();
+                const resp = "سلام خوش امدی چه کمکی از دستم بر میاد";
+                jarvisText.textContent = `«${resp}»`;
+                speakJarvis(resp);
+            }
+            else if (isMusicStopCmd) {
                 stopBackInBlackMusic();
                 const resp = "بله قربان اهنگ قطع شد";
                 jarvisText.textContent = `«${resp}»`;
@@ -498,9 +515,9 @@
                 });
             } 
             else {
-                // Fallback greeting or general guidance
+                // Fallback greeting or general guidance without loop triggers
                 stopBackInBlackMusic();
-                const defaultResp = "در خدمت شما هستم قربان. می‌توانید دستورات «گوگل باز کن»، «آهنگ Back in Black پخش کن» یا «آهنگ قطع کن» را بگویید.";
+                const defaultResp = "متوجه دستور شما نشدم قربان. لطفاً دوباره بفرمایید.";
                 jarvisText.textContent = `«${defaultResp}»`;
                 speakJarvis(defaultResp);
             }
@@ -560,11 +577,12 @@
                 }
             } else {
                 // Simulation fallback
-                simulateInput("جارویس گوگل باز کن");
+                simulateInput("سلام");
             }
         });
 
         // Test Buttons Logic
+        cmdHelloBtn.addEventListener('click', () => simulateInput("سلام"));
         cmdGoogleBtn.addEventListener('click', () => simulateInput("جارویس گوگل باز کن"));
         cmdMusicBtn.addEventListener('click', () => simulateInput("جارویس اهنگ black in black پخش کن"));
         cmdStopMusicBtn.addEventListener('click', () => simulateInput("جارویس اهنگ قطع کن"));
