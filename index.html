@@ -1,720 +1,1116 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>گفتگوی صوتی و بازی آنلاین</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Vazirmatn Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کانتر استرایک mini - Dust 2</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-  <style>
-    * {
-      font-family: 'Vazirmatn', sans-serif;
-    }
-    
-    /* پس‌زمینه متحرک و نئونی */
-    body {
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-      min-height: 100vh;
-      color: #f8fafc;
-    }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-    .glass-card {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
 
-    .glow-btn {
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-      transition: all 0.3s ease;
-    }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
 
-    .glow-btn:hover {
-      box-shadow: 0 0 25px rgba(99, 102, 241, 0.8);
-      transform: translateY(-2px);
-    }
+        /* UI Overlays */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #fff;
+            font-family: monospace;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
 
-    .pulse-ring {
-      animation: pulse-ring-anim 2s infinite;
-    }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-    @keyframes pulse-ring-anim {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-  </style>
+        .score-box {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            gap: 20px;
+        }
+
+        .team-ct { color: #4a90e2; }
+        .team-t { color: #e67e22; }
+
+        .timer {
+            font-size: 28px;
+            color: #f1c40f;
+            font-weight: bold;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            pointer-events: none;
+        }
+
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(0, 255, 0, 0.8);
+        }
+
+        #crosshair::before {
+            top: 5px;
+            left: 0;
+            width: 12px;
+            height: 2px;
+        }
+
+        #crosshair::after {
+            top: 0;
+            left: 5px;
+            width: 2px;
+            height: 12px;
+        }
+
+        .bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ammo-box {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #f39c12;
+            text-align: right;
+        }
+
+        #reloading-text {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #e74c3c;
+            font-weight: bold;
+            display: none;
+        }
+
+        #kill-feed {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-end;
+        }
+
+        .kill-message {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            border-right: 4px solid #e74c3c;
+            animation: fadeOut 5s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Modal / Menu */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 20, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #fff;
+        }
+
+        .modal h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            color: #f39c12;
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+        }
+
+        .modal p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #aaa;
+        }
+
+        .team-select {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .btn-team {
+            width: 220px;
+            height: 140px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            background: #222;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+        }
+
+        .btn-team:hover {
+            transform: translateY(-5px);
+        }
+
+        .btn-ct {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-color: #4a90e2;
+        }
+
+        .btn-t {
+            background: linear-gradient(135deg, #8e2de2, #4a00e0);
+            background: linear-gradient(135deg, #b79891, #94716b);
+            background: linear-gradient(135deg, #d35400, #e67e22);
+            border-color: #f39c12;
+        }
+
+        .controls-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-align: center;
+            line-height: 1.6;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        /* Radar Minimap */
+        #radar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 140px;
+            height: 140px;
+            background: rgba(0, 20, 0, 0.6);
+            border: 2px solid rgba(0, 255, 0, 0.4);
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        #radar-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* */
+        .touch-btn {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            z-index: 50;
+            backdrop-filter: blur(4px);
+            pointer-events: auto;
+        }
+
+        .touch-btn:active {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(0.95);
+        }
+
+        #fire-btn {
+            bottom: 40px;
+            right: 30px;
+            width: 75px;
+            height: 75px;
+            background: rgba(231, 76, 60, 0.7);
+            border-color: #e74c3c;
+            font-size: 24px;
+        }
+
+        #jump-btn {
+            bottom: 130px;
+            right: 35px;
+            width: 55px;
+            height: 55px;
+            background: rgba(52, 152, 219, 0.6);
+            border-color: #3498db;
+            font-size: 16px;
+        }
+
+        #zoom-btn {
+            bottom: 125px;
+            right: 105px;
+            width: 55px;
+            height: 55px;
+            background: rgba(155, 89, 182, 0.6);
+            border-color: #9b59b6;
+            font-size: 16px;
+        }
+
+        #reload-btn {
+            bottom: 40px;
+            right: 120px;
+            width: 55px;
+            height: 55px;
+            background: rgba(241, 196, 15, 0.6);
+            border-color: #f1c40f;
+            font-size: 18px;
+        }
+
+        /* Joystick Base & Knob */
+        #joystick-container {
+            position: absolute;
+            bottom: 40px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            touch-action: none;
+            pointer-events: auto;
+            z-index: 50;
+        }
+
+        #joystick-knob {
+            position: absolute;
+            top: 35px;
+            left: 35px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        #touch-look-area {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 65%;
+            height: 100%;
+            touch-action: none;
+            pointer-events: auto;
+            z-index: 10;
+        }
+    </style>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-<body class="p-4 md:p-8 flex flex-col items-center justify-center min-h-screen">
+<body>
 
-  <!-- کانتینر اصلی -->
-  <div class="w-full max-w-4xl flex flex-col gap-6">
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
 
-    <!-- سربرگ برنامه -->
-    <header class="glass-card rounded-2xl p-6 text-center flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-2xl text-white shadow-lg shadow-indigo-500/30">
-          <i class="fa-solid font-bold fa-headset"></i>
-        </div>
-        <div class="text-right">
-          <h1 class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400">
-            گفتگوی صوتی و بازی آنلاین
-          </h1>
-          <p class="text-xs text-slate-400">تماس صوتی مستقیم P2P بدون تاخیر با قابلیت بازی همزمان</p>
-        </div>
-      </div>
-
-      <!-- وضعیت اتصال -->
-      <div id="connectionStatus" class="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/80 border border-slate-700 text-sm">
-        <span class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
-        <span id="statusText" class="text-slate-300">در انتظار ایجاد یا ورود به اتاق...</span>
-      </div>
-    </header>
-
-    <!-- بخش مدیریت اتاق و تماس -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-      <!-- پنل کنترل تماس (سمت راست) -->
-      <div class="glass-card rounded-2xl p-6 flex flex-col gap-5 md:col-span-1 shadow-xl">
-        <h2 class="text-lg font-bold border-b border-slate-700 pb-3 flex items-center gap-2 text-indigo-300">
-          <i class="fa-solid fa-phone"></i> مدیریت تماس صوتی
-        </h2>
-
-        <!-- فرم ساخت/ورود به اتاق -->
-        <div id="roomSetupArea" class="flex flex-col gap-4">
-          <button id="btnCreateRoom" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl glow-btn flex items-center justify-center gap-2 transition">
-            <i class="fa-solid fa-plus-circle"></i> ساخت اتاق جدید (تماس)
-          </button>
-
-          <div class="flex items-center gap-2 my-1">
-            <div class="h-px bg-slate-700 flex-1"></div>
-            <span class="text-xs text-slate-400">یا</span>
-            <div class="h-px bg-slate-700 flex-1"></div>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label class="text-xs text-slate-300">کد اتاق دوستتان را وارد کنید:</label>
-            <div class="flex gap-2">
-              <input id="inputRoomCode" type="text" placeholder="مثلا: 12345" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-indigo-300 font-mono focus:outline-none focus:border-indigo-500 transition">
-              <button id="btnJoinRoom" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl transition">
-                ورود
-              </button>
+        <!-- HUD -->
+        <div id="hud">
+            <div id="radar">
+                <canvas id="radar-canvas" width="140" height="140"></canvas>
             </div>
-          </div>
-        </div>
 
-        <!-- نمایش اطلاعات اتاق پس از ساخت -->
-        <div id="activeRoomInfo" class="hidden flex-col gap-4 bg-slate-900/80 p-4 rounded-xl border border-indigo-500/30">
-          <div class="text-center">
-            <span class="text-xs text-slate-400">کد اختصاصی اتاق شما:</span>
-            <div class="flex items-center justify-center gap-2 mt-1">
-              <span id="displayRoomCode" class="text-2xl font-mono font-bold text-indigo-400 tracking-wider">-----</span>
-              <button id="btnCopyCode" title="کپی کد" class="text-slate-400 hover:text-white p-1">
-                <i class="fa-regular fa-copy"></i>
-              </button>
+            <div class="top-bar" style="margin: 0 auto; width: 350px;">
+                <div class="score-box">
+                    <span class="team-ct" id="score-ct">CT: 0</span>
+                    <span>-</span>
+                    <span class="team-t" id="score-t">T: 0</span>
+                </div>
+                <div class="timer" id="round-timer">02:00</div>
             </div>
-          </div>
 
-          <p class="text-xs text-slate-400 text-center">این کد را به دوست خود بدهید تا روی «ورود» بزند و صوتی صحبت کنید.</p>
-        </div>
+            <div id="crosshair"></div>
+            <div id="reloading-text">در حال تعویض خشاب (R)...</div>
 
-        <!-- دکمه‌های کنترل میکروفون و صدا -->
-        <div id="audioControls" class="flex flex-col gap-3 mt-auto">
-          <div class="grid grid-cols-2 gap-2">
-            <button id="btnToggleMic" class="py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition">
-              <i class="fa-solid fa-microphone"></i>
-              <span id="micStatusText">میکروفون فعال</span>
-            </button>
-            <button id="btnToggleSpeaker" class="py-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition">
-              <i class="fa-solid fa-volume-high"></i>
-              <span id="speakerStatusText">صدا فعال</span>
-            </button>
-          </div>
+            <div id="kill-feed"></div>
 
-          <button id="btnEndCall" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg shadow-rose-600/30 transition hidden flex items-center justify-center gap-2">
-            <i class="fa-solid fa-phone-slash"></i> قطع تماس صوتی
-          </button>
-
-          <!-- دکمه تنظیمات فایربیس برای گیت‌هاب -->
-          <button id="btnOpenConfigModal" class="text-xs text-slate-400 hover:text-indigo-300 underline text-center mt-2">
-            تنظیمات پایگاه‌داده (مخصوص گیت‌هاب)
-          </button>
-        </div>
-      </div>
-
-      <!-- پنل ویژوالایزر و بازی همزمان (سمت چپ) -->
-      <div class="glass-card rounded-2xl p-6 md:col-span-2 flex flex-col gap-6 shadow-xl">
-
-        <!-- بخش نمایش امواج صوتی (Voice Visualizer) -->
-        <div class="grid grid-cols-2 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-          
-          <!-- صدای من -->
-          <div class="flex flex-col items-center gap-2">
-            <span class="text-xs text-indigo-300 font-semibold flex items-center gap-1">
-              <i class="fa-solid fa-user"></i> صدای شما (میکروفون)
-            </span>
-            <div class="w-full h-16 bg-slate-950 rounded-lg overflow-hidden relative border border-indigo-500/20 flex items-center justify-center">
-              <canvas id="myCanvas" class="w-full h-full"></canvas>
+            <!-- -->
+            <div id="touch-controls">
+                <div id="joystick-container">
+                    <div id="joystick-knob"></div>
+                </div>
+                <div id="touch-look-area"></div>
+                <div id="fire-btn" class="touch-btn">💥</div>
+                <div id="jump-btn" class="touch-btn">⬆</div>
+                <div id="zoom-btn" class="touch-btn">🔍</div>
+                <div id="reload-btn" class="touch-btn">↻</div>
             </div>
-          </div>
 
-          <!-- صدای مخاطب -->
-          <div class="flex flex-col items-center gap-2">
-            <span class="text-xs text-pink-300 font-semibold flex items-center gap-1">
-              <i class="fa-solid fa-user-group"></i> صدای مخاطب
-            </span>
-            <div class="w-full h-16 bg-slate-950 rounded-lg overflow-hidden relative border border-pink-500/20 flex items-center justify-center">
-              <canvas id="peerCanvas" class="w-full h-full"></canvas>
+            <div class="bottom-bar">
+                <div class="stats-group">
+                    <div class="stat-item" style="color: #e74c3c;">
+                        <span>+</span>
+                        <span id="health-val">100</span>
+                    </div>
+                    <div class="stat-item" style="color: #3498db;">
+                        <span>🛡</span>
+                        <span id="armor-val">100</span>
+                    </div>
+                </div>
+
+                <div class="ammo-box">
+                    <span id="ammo-clip">30</span> / <span id="ammo-reserve">90</span>
+                </div>
             </div>
-          </div>
-
         </div>
 
-        <!-- بازی آنلاین دوز (Tic-Tac-Toe) حین مکالمه -->
-        <div class="flex flex-col items-center gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-700/30">
-          <div class="flex items-center justify-between w-full">
-            <h3 class="text-md font-bold text-slate-200 flex items-center gap-2">
-              <i class="fa-solid fa-gamepad text-indigo-400"></i> بازی دوز همزمان (سرگرمی حین صحبت)
-            </h3>
-            <span id="gameTurnText" class="text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
-              در انتظار اتصال مخاطب...
-            </span>
-          </div>
+        <!-- Start/Death Screen -->
+        <div id="start-modal" class="modal">
+            <h1>کانتر استرایک - DUST 2</h1>
+            <p>تیم خود را برای شروع بازی انتخاب کنید (۶ در برابر ۶)</p>
+            
+            <div class="team-select">
+                <button class="btn-team btn-ct" onclick="selectTeam('CT')">
+                    <span>ضد تروریست (CT)</span>
+                    <small style="font-weight: normal; font-size: 13px;">دفاع از A و B</small>
+                </button>
+                <button class="btn-team btn-t" onclick="selectTeam('T')">
+                    <span>تروریست (T)</span>
+                    <small style="font-weight: normal; font-size: 13px;">حمله به A و B</small>
+                </button>
+            </div>
 
-          <!-- صفحه 9 خانه دوز -->
-          <div class="grid grid-cols-3 gap-2 w-full max-w-[260px] aspect-square">
-            <button data-index="0" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="1" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="2" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="3" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="4" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="5" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="6" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="7" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-            <button data-index="8" class="game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20"> </button>
-          </div>
-
-          <button id="btnResetGame" class="text-xs text-indigo-300 hover:underline">
-            شروع مجدد بازی دوز
-          </button>
+            <div class="controls-info">
+                <b>راهنمای کلیدها:</b><br>
+                حرکت: W, A, S, D | پرش: Space<br>
+                شلیک: کلیک چپ موس | زوم: کلیک راست<br>
+                تعویض تیر (Reload): کلید R | قفل موس: کلیک روی صفحه
+            </div>
         </div>
-
-      </div>
-
     </div>
 
-  </div>
-
-  <!-- مودال تنظیمات فایربیس برای گیت‌هاب -->
-  <div id="configModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card max-w-lg w-full p-6 rounded-2xl flex flex-col gap-4 border border-indigo-500/30">
-      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-        <h3 class="font-bold text-indigo-300 flex items-center gap-2">
-          <i class="fa-solid fa-sliders"></i> تنظیمات فایربیس (Firebase Config)
-        </h3>
-        <button id="btnCloseConfigModal" class="text-slate-400 hover:text-white">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <p class="text-xs text-slate-300 leading-relaxed">
-        برای اجرا روی <b>گیت‌هاب</b> یا دامنه اختصاصی، باید کد تنظیمات پروژه‌ی <b>Firebase</b> خود را به‌صورت کد JSON وارد کنید تا پایگاه‌داده و اتصال صوتی فعال شود:
-      </p>
-      <textarea id="inputConfigJson" rows="6" placeholder='{
-  "apiKey": "...",
-  "authDomain": "...",
-  "projectId": "...",
-  "storageBucket": "...",
-  "messagingSenderId": "...",
-  "appId": "..."
-}' class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs font-mono text-indigo-300 focus:outline-none focus:border-indigo-500"></textarea>
-      <div class="flex gap-2 justify-end">
-        <button id="btnSaveConfig" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
-          ذخیره و راه‌اندازی مجدد
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- عنصر صوتی مخفی برای دریافت صدای مخاطب -->
-  <audio id="remoteAudio" autoplay></audio>
-
-  <!-- پیام اعلان سفارشی (Modal/Toast) -->
-  <div id="toastNotification" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-2xl transition transform translate-y-20 opacity-0 flex items-center gap-3 z-50">
-    <i class="fa-solid fa-info-circle text-lg"></i>
-    <span id="toastText">پیام سیستم</span>
-  </div>
-
-  <!-- اسکریپت اصلی اتصال صوتی و بازی -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // دریافت ایمن تنظیمات فایربیس (چه در Canvas و چه در گیت‌هاب)
-    function getFirebaseConfig() {
-      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-        try {
-          return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-        } catch(e) {}
-      }
-      const savedConfig = localStorage.getItem('custom_firebase_config');
-      if (savedConfig) {
-        try {
-          return JSON.parse(savedConfig);
-        } catch(e) {}
-      }
-      return null;
-    }
-
-    const firebaseConfig = getFirebaseConfig();
-    let app = null;
-    let auth = null;
-    let db = null;
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'voice-chat-app';
-
-    if (firebaseConfig) {
-      try {
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-      } catch (e) {
-        console.error("خطا در بارگذاری فایربیس:", e);
-      }
-    }
-
-    // متغیرهای وضعیت برنامه‌نویسی
-    let currentUser = null;
-    let localStream = null;
-    let peerConnection = null;
-    let currentRoomId = null;
-    let isMicMuted = false;
-    let isSpeakerMuted = false;
-    let myRole = null; // 'X' یا 'O'
-
-    // پیکربندی سرورهای STUN برای ارتباط مستقیم WebRTC
-    const rtcConfig = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
-    };
-
-    // عناصر رابط کاربری
-    const btnCreateRoom = document.getElementById('btnCreateRoom');
-    const btnJoinRoom = document.getElementById('btnJoinRoom');
-    const inputRoomCode = document.getElementById('inputRoomCode');
-    const activeRoomInfo = document.getElementById('activeRoomInfo');
-    const displayRoomCode = document.getElementById('displayRoomCode');
-    const btnCopyCode = document.getElementById('btnCopyCode');
-    const roomSetupArea = document.getElementById('roomSetupArea');
-    const statusText = document.getElementById('statusText');
-    const connectionStatus = document.getElementById('connectionStatus');
-    const btnEndCall = document.getElementById('btnEndCall');
-    const btnToggleMic = document.getElementById('btnToggleMic');
-    const btnToggleSpeaker = document.getElementById('btnToggleSpeaker');
-    const remoteAudio = document.getElementById('remoteAudio');
-    const gameTurnText = document.getElementById('gameTurnText');
-    const gameCells = document.querySelectorAll('.game-cell');
-    const btnResetGame = document.getElementById('btnResetGame');
-    const configModal = document.getElementById('configModal');
-    const btnOpenConfigModal = document.getElementById('btnOpenConfigModal');
-    const btnCloseConfigModal = document.getElementById('btnCloseConfigModal');
-    const btnSaveConfig = document.getElementById('btnSaveConfig');
-    const inputConfigJson = document.getElementById('inputConfigJson');
-
-    // مدیریت مودال تنظیمات فایربیس
-    btnOpenConfigModal.addEventListener('click', () => {
-      configModal.classList.remove('hidden');
-    });
-    btnCloseConfigModal.addEventListener('click', () => {
-      configModal.classList.add('hidden');
-    });
-    btnSaveConfig.addEventListener('click', () => {
-      try {
-        const val = inputConfigJson.value.trim();
-        JSON.parse(val); // تست ولید بودن
-        localStorage.setItem('custom_firebase_config', val);
-        showToast('تنظیمات ذخیره شد! درحال بارگذاری مجدد...');
-        setTimeout(() => location.reload(), 1000);
-      } catch (err) {
-        showToast('فرمت JSON وارد شده نامعتبر است!');
-      }
-    });
-
-    // بررسی آمادگی پایگاه‌داده
-    function checkDatabaseReady() {
-      if (!db || !auth) {
-        configModal.classList.remove('hidden');
-        showToast('لطفاً اطلاعات فایربیس را وارد کنید.');
-        return false;
-      }
-      return true;
-    }
-
-    // ۱. احراز هویت اولیه
-    async function initAuth() {
-      if (!auth) return;
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("خطا در احراز هویت:", err);
-      }
-    }
-    initAuth();
-
-    if (auth) {
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          currentUser = user;
-        }
-      });
-    }
-
-    // نمایش اعلان خودکار
-    function showToast(message) {
-      const toast = document.getElementById('toastNotification');
-      document.getElementById('toastText').innerText = message;
-      toast.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => {
-        toast.classList.add('translate-y-20', 'opacity-0');
-      }, 3500);
-    }
-
-    // ۲. راه اندازی میکروفون کاربر
-    async function getMicrophone() {
-      if (localStream) return localStream;
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        setupVisualizer(localStream, 'myCanvas', '#6366f1');
-        return localStream;
-      } catch (err) {
-        showToast('لطفاً دسترسی به میکروفون را تایید کنید.');
-        throw err;
-      }
-    }
-
-    // ۳. ساخت اتاق و تماس صوتی (Caller)
-    btnCreateRoom.addEventListener('click', async () => {
-      if (!checkDatabaseReady()) return;
-      try {
-        const stream = await getMicrophone();
-        myRole = 'X';
-        
-        // تولید کد ۵ رقمی تصادفی
-        currentRoomId = Math.floor(10000 + Math.random() * 90000).toString();
-        displayRoomCode.innerText = currentRoomId;
-        
-        roomSetupArea.classList.add('hidden');
-        activeRoomInfo.classList.remove('hidden');
-        activeRoomInfo.classList.add('flex');
-        btnEndCall.classList.remove('hidden');
-
-        updateStatus('درحال انتظار برای پیوستن دوستتان...', 'amber');
-
-        peerConnection = new RTCPeerConnection(rtcConfig);
-
-        // افزودن ترک صوتی به اتصال
-        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-
-        // دریافت ترک صوتی مخاطب
-        peerConnection.ontrack = (event) => {
-          remoteAudio.srcObject = event.streams[0];
-          setupVisualizer(event.streams[0], 'peerCanvas', '#ec4899');
-          updateStatus('تماس صوتی متصل شد! مشغول صحبت', 'emerald');
-          showToast('کاربر دوم متصل شد!');
+    <script>
+        // --- تنظیمات و متغیرهای اصلی ---
+        let scene, camera, renderer;
+        let player = {
+            height: 1.7,
+            speed: 0.12,
+            jumpForce: 0.18,
+            velocity: new THREE.Vector3(),
+            health: 100,
+            armor: 100,
+            team: 'CT',
+            onGround: false,
+            ammoClip: 30,
+            clipSize: 30,
+            ammoReserve: 90,
+            isReloading: false,
+            kills: 0,
+            deaths: 0
         };
 
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
-        
-        // ذخیره کاندیداهای ICE
-        peerConnection.onicecandidate = async (event) => {
-          if (event.candidate) {
-            const callerCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'callerCandidates');
-            await addDoc(callerCandidatesCol, event.candidate.toJSON());
-          }
+        let touchControls = {
+            joystickActive: false,
+            joystickTouchId: null,
+            joystickStart: { x: 0, y: 0 },
+            joystickMove: { x: 0, y: 0 },
+            lookTouchId: null,
+            lookStart: { x: 0, y: 0 },
+            fireInterval: null
         };
 
-        // ایجاد پیشنهاد SDP Offer
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
+        let keys = {};
+        let mouseLook = { yaw: 0, pitch: 0 };
+        let isGameStarted = false;
+        let roundTime = 120;
+        let timerInterval;
 
-        await setDoc(roomRef, {
-          offer: { type: offer.type, sdp: offer.sdp },
-          gameState: { board: Array(9).fill(''), turn: 'X', winner: null },
-          createdAt: Date.now()
-        });
+        let ctScore = 0;
+        let tScore = 0;
 
-        // گوش دادن به پاسخ کاربر دوم (Callee Answer)
-        onSnapshot(roomRef, async (snapshot) => {
-          const data = snapshot.data();
-          if (data && data.answer && !peerConnection.currentRemoteDescription) {
-            const answer = new RTCSessionDescription(data.answer);
-            await peerConnection.setRemoteDescription(answer);
-          }
-          if (data && data.gameState) {
-            updateGameBoardUI(data.gameState);
-          }
-        });
+        // آرایه‌های فیزیک و اشیاء
+        let collidableObjects = []; // دیوارهای فیزیکی
+        let bots = [];
+        let bullets = [];
+        let muzzleFlashes = [];
 
-        // دریافت کاندیداهای کاربر دوم
-        const calleeCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'calleeCandidates');
-        onSnapshot(calleeCandidatesCol, (snapshot) => {
-          snapshot.docChanges().forEach(async (change) => {
-            if (change.type === 'added') {
-              const candidate = new RTCIceCandidate(change.doc.data());
-              await peerConnection.addIceCandidate(candidate);
+        // نقشه Dust2 (دیوارها و جعبه‌ها)
+        const MAP_BOUNDS = 120;
+
+        // --- راه‌اندازی اولیه Three.js ---
+        function initEngine() {
+            const container = document.getElementById('game-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xdce7f0); // آسمان روشن صحرایی
+            scene.fog = new THREE.FogExp2(0xdce7f0, 0.015);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // نورپردازی
+            const ambientLight = new THREE.AmbientLight(0xfff5ea, 0.7);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+            sunLight.position.set(50, 100, 30);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 250;
+            const d = 80;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            scene.add(sunLight);
+
+            // ساخت نقشه Dust2
+            buildDust2Map();
+
+            // ساخت اسلحه بازیکن
+            createPlayerGun();
+
+            initTouchControls();
+
+            // رویدادهای ورودی
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', e => keys[e.code] = true);
+            document.addEventListener('keyup', e => keys[e.code] = false);
+
+            document.addEventListener('click', () => {
+                if (isGameStarted && document.pointerLockElement !== document.body) {
+                    document.body.requestPointerLock();
+                }
+            });
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onMouseDown);
+
+            // حلقه اصلی بازی
+            animate();
+        }
+
+        // --- ساخت نقشه Dust 2 ---
+        function buildDust2Map() {
+            // متریال‌ها
+            const sandTexture = createColorTexture('#d2b48c');
+            const wallTexture = createColorTexture('#c2a649');
+            const crateTexture = createColorTexture('#8b5a2b');
+            const siteATexture = createColorTexture('#a33');
+            const siteBTexture = createColorTexture('#33a');
+
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0xdfbf9f, roughness: 0.9 });
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0xd8be91, roughness: 0.8 });
+            const crateMat = new THREE.MeshStandardMaterial({ color: 0x966f33, roughness: 0.6 });
+
+            // زمین اصلی
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // دیوارهای خارجی نقشه
+            createWall(0, 5, -80, 160, 10, 2, wallMat); // شمال
+            createWall(0, 5, 80, 160, 10, 2, wallMat);  // جنوب
+            createWall(-80, 5, 0, 2, 10, 160, wallMat); // غرب
+            createWall(80, 5, 0, 2, 10, 160, wallMat);  // شرق
+
+            // --- ساختارهای اصلی Dust2 ---
+
+            // سایت A (بالا سمت راست / شمال شرق)
+            createWall(40, 3, -50, 30, 6, 2, wallMat);
+            createCrate(45, 1.5, -45, 3, 3, 3, crateMat);
+            createCrate(50, 1.5, -45, 3, 3, 3, crateMat);
+            createCrate(47, 4.5, -45, 3, 3, 3, crateMat);
+            createSiteZone(50, 0.01, -50, 15, 'A');
+
+            // Long A (مسیر مستقیم سمت راست)
+            createWall(65, 5, 0, 2, 10, 80, wallMat); // دیواره Long
+
+            // سایت B (بالا سمت چپ / شمال غرب)
+            createWall(-50, 5, -40, 40, 10, 2, wallMat); // دیواره پشتی B
+            createWall(-30, 5, -55, 2, 10, 30, wallMat);
+            createCrate(-55, 1.5, -55, 3, 3, 3, crateMat);
+            createCrate(-50, 1.5, -58, 3, 3, 3, crateMat);
+            createSiteZone(-50, 0.01, -55, 15, 'B');
+
+            // تونل B (مسیر تاریک)
+            createWall(-50, 5, 0, 2, 10, 50, wallMat);
+            createWall(-65, 5, 10, 2, 10, 50, wallMat);
+
+            // Mid (وسط)
+            createWall(0, 5, 10, 2, 10, 60, wallMat); // دیواره وسط
+            createWall(15, 5, -20, 30, 10, 2, wallMat); // Mid Doors Area
+
+            // جعبه‌های مختلف برای کاور
+            createCrate(0, 1.5, 30, 3, 3, 3, crateMat);
+            createCrate(5, 1.5, 30, 3, 3, 3, crateMat);
+            createCrate(-10, 1.5, -10, 4, 4, 4, crateMat);
+            createCrate(20, 1.5, 40, 3, 3, 3, crateMat);
+            createCrate(55, 1.5, 10, 4, 4, 4, crateMat);
+            createCrate(-40, 1.5, 20, 3, 3, 3, crateMat);
+        }
+
+        function createWall(x, y, z, w, h, d, material) {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+
+            // ساخت Bounding Box برای برخورد تیر و بازیکن
+            const box = new THREE.Box3().setFromObject(mesh);
+            collidableObjects.push({ mesh: mesh, box: box, type: 'wall' });
+        }
+
+        function createCrate(x, y, z, w, h, d, material) {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+
+            const box = new THREE.Box3().setFromObject(mesh);
+            collidableObjects.push({ mesh: mesh, box: box, type: 'crate' });
+        }
+
+        function createSiteZone(x, y, z, size, name) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = name === 'A' ? '#e74c3c' : '#3498db';
+            ctx.font = 'Bold 80px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(name, 64, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const geo = new THREE.PlaneGeometry(size, size);
+            const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.6 });
+            const zone = new THREE.Mesh(geo, mat);
+            zone.rotation.x = -Math.PI / 2;
+            zone.position.set(x, y, z);
+            scene.add(zone);
+        }
+
+        function createColorTexture(colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 16; canvas.height = 16;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = colorHex;
+            ctx.fillRect(0, 0, 16, 16);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- تفنگ بازیکن ---
+        let gunGroup;
+        function createPlayerGun() {
+            gunGroup = new THREE.Group();
+
+            // بدنه اسلحه (AK47 / M4)
+            const bodyGeo = new THREE.BoxGeometry(0.08, 0.12, 0.5);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.3 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            gunGroup.add(body);
+
+            // لوله تفنگ
+            const barrelGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.4);
+            const barrel = new THREE.Mesh(barrelGeo, bodyMat);
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.set(0, 0.02, -0.4);
+            gunGroup.add(barrel);
+
+            // خشاب
+            const magGeo = new THREE.BoxGeometry(0.04, 0.18, 0.08);
+            const magMat = new THREE.MeshStandardMaterial({ color: 0x554433 });
+            const mag = new THREE.Mesh(magGeo, magMat);
+            mag.position.set(0, -0.1, -0.1);
+            mag.rotation.x = 0.2;
+            gunGroup.add(mag);
+
+            gunGroup.position.set(0.2, -0.2, -0.4);
+            camera.add(gunGroup);
+            scene.add(camera);
+        }
+
+        // --- ساخت ربات‌ها (AI) ---
+        function spawnBots() {
+            // پاکسازی ربات‌های قبلی
+            bots.forEach(b => scene.remove(b.mesh));
+            bots = [];
+
+            // نقاط اسپاون مشخص
+            // CT Spawn: انتهای نقشه (جنوب/شرق)
+            // T Spawn: ابتدای نقشه (شمال/غرب)
+            const ctSpawns = [
+                { x: 10, z: 60 }, { x: 15, z: 60 }, { x: 20, z: 60 },
+                { x: 10, z: 65 }, { x: 15, z: 65 }, { x: 20, z: 65 }
+            ];
+
+            const tSpawns = [
+                { x: -50, z: 60 }, { x: -55, z: 60 }, { x: -60, z: 60 },
+                { x: -50, z: 65 }, { x: -55, z: 65 }, { x: -60, z: 65 }
+            ];
+
+            // اسپاون بازیکن اصلی
+            if (player.team === 'CT') {
+                const pSpawn = ctSpawns.pop();
+                camera.position.set(pSpawn.x, player.height, pSpawn.z);
+            } else {
+                const pSpawn = tSpawns.pop();
+                camera.position.set(pSpawn.x, player.height, pSpawn.z);
             }
-          });
-        });
 
-      } catch (err) {
-        console.error(err);
-      }
-    });
+            // ساخت ۵ یار خودی + ۶ دشمن
+            ctSpawns.forEach((sp, idx) => {
+                if (player.team !== 'CT' || idx < 5) {
+                    createBot('CT', sp.x, sp.z);
+                }
+            });
 
-    // ۴. ورود به اتاق با کد (Callee)
-    btnJoinRoom.addEventListener('click', async () => {
-      if (!checkDatabaseReady()) return;
-      const code = inputRoomCode.value.trim();
-      if (!code) {
-        showToast('لطفا کد اتاق را وارد کنید.');
-        return;
-      }
-
-      try {
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
-        const roomSnap = await getDoc(roomRef);
-
-        if (!roomSnap.exists()) {
-          showToast('اتاقی با این کد یافت نشد!');
-          return;
+            tSpawns.forEach((sp, idx) => {
+                if (player.team !== 'T' || idx < 5) {
+                    createBot('T', sp.x, sp.z);
+                }
+            });
         }
 
-        const stream = await getMicrophone();
-        currentRoomId = code;
-        myRole = 'O';
+        function createBot(team, x, z) {
+            const group = new THREE.Group();
 
-        roomSetupArea.classList.add('hidden');
-        btnEndCall.classList.remove('hidden');
-        updateStatus('درحال برقراری تماس صوتی...', 'indigo');
+            // رنگ لباس: CT آبی، T قهوه‌ای/قرمز
+            const color = team === 'CT' ? 0x2980b9 : 0xd35400;
+            const bodyMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
 
-        peerConnection = new RTCPeerConnection(rtcConfig);
+            // بدن
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.4, 8), bodyMat);
+            body.position.y = 0.7;
+            body.castShadow = true;
+            group.add(body);
 
-        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+            // سر
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), headMat);
+            head.position.y = 1.6;
+            head.castShadow = true;
+            group.add(head);
 
-        peerConnection.ontrack = (event) => {
-          remoteAudio.srcObject = event.streams[0];
-          setupVisualizer(event.streams[0], 'peerCanvas', '#ec4899');
-          updateStatus('تماس صوتی متصل شد! مشغول صحبت', 'emerald');
-          showToast('با موفقیت متصل شدید!');
-        };
+            // تفنگ ربات
+            const gun = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.6), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+            gun.position.set(0.2, 1.1, -0.3);
+            group.add(gun);
 
-        peerConnection.onicecandidate = async (event) => {
-          if (event.candidate) {
-            const calleeCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'calleeCandidates');
-            await addDoc(calleeCandidatesCol, event.candidate.toJSON());
-          }
-        };
+            group.position.set(x, 0, z);
+            scene.add(group);
 
-        const roomData = roomSnap.data();
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+            bots.push({
+                mesh: group,
+                team: team,
+                health: 100,
+                target: null,
+                lastShootTime: 0,
+                speed: 0.06 + Math.random() * 0.03,
+                changeDirTimer: 0,
+                moveDir: new THREE.Vector3()
+            });
+        }
 
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
+        // --- شروع بازی / انتخاب تیم ---
+        function selectTeam(selectedTeam) {
+            player.team = selectedTeam;
+            document.getElementById('start-modal').style.display = 'none';
 
-        await updateDoc(roomRef, {
-          answer: { type: answer.type, sdp: answer.sdp }
-        });
-
-        // کاندیداهای Caller
-        const callerCandidatesCol = collection(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId, 'callerCandidates');
-        onSnapshot(callerCandidatesCol, (snapshot) => {
-          snapshot.docChanges().forEach(async (change) => {
-            if (change.type === 'added') {
-              const candidate = new RTCIceCandidate(change.doc.data());
-              await peerConnection.addIceCandidate(candidate);
+            // درخواست قفل موس فقط برای سیستم‌های غیر لمسی
+            if (!('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+                document.body.requestPointerLock();
             }
-          });
-        });
 
-        // به روز رسانی بازی دوز
-        onSnapshot(roomRef, (snapshot) => {
-          const data = snapshot.data();
-          if (data && data.gameState) {
-            updateGameBoardUI(data.gameState);
-          }
-        });
-
-      } catch (err) {
-        console.error(err);
-      }
-    });
-
-    // کپی کردن کد اتاق
-    btnCopyCode.addEventListener('click', () => {
-      if (currentRoomId) {
-        const dummy = document.createElement("input");
-        document.body.appendChild(dummy);
-        dummy.value = currentRoomId;
-        dummy.select();
-        document.execCommand("copy");
-        document.body.removeChild(dummy);
-        showToast('کد اتاق کپی شد!');
-      }
-    });
-
-    // کنترل قطع/وصل میکروفون
-    btnToggleMic.addEventListener('click', () => {
-      if (localStream) {
-        isMicMuted = !isMicMuted;
-        localStream.getAudioTracks()[0].enabled = !isMicMuted;
-        document.getElementById('micStatusText').innerText = isMicMuted ? 'میکروفون خاموش' : 'میکروفون فعال';
-        btnToggleMic.classList.toggle('bg-rose-600', isMicMuted);
-      }
-    });
-
-    // کنترل قطع/وصل بلندگو
-    btnToggleSpeaker.addEventListener('click', () => {
-      isSpeakerMuted = !isSpeakerMuted;
-      remoteAudio.muted = isSpeakerMuted;
-      document.getElementById('speakerStatusText').innerText = isSpeakerMuted ? 'صدا قطع' : 'صدا فعال';
-      btnToggleSpeaker.classList.toggle('bg-rose-600', isSpeakerMuted);
-    });
-
-    // قطع تماس صوتی
-    btnEndCall.addEventListener('click', () => {
-      if (peerConnection) peerConnection.close();
-      if (localStream) localStream.getTracks().forEach(t => t.stop());
-      location.reload();
-    });
-
-    // ۵. منطق بازی دوز همزمان (Tic-Tac-Toe)
-    let currentGameState = { board: Array(9).fill(''), turn: 'X', winner: null };
-
-    gameCells.forEach(cell => {
-      cell.addEventListener('click', async () => {
-        const index = cell.getAttribute('data-index');
-        if (!currentRoomId || !myRole) {
-          showToast('ابتدا باید وارد تماس صوتی شوید.');
-          return;
-        }
-        if (currentGameState.turn !== myRole) {
-          showToast('نوبت شما نیست!');
-          return;
-        }
-        if (currentGameState.board[index] !== '' || currentGameState.winner) {
-          return;
+            isGameStarted = true;
+            resetRound();
         }
 
-        const newBoard = [...currentGameState.board];
-        newBoard[index] = myRole;
-        const nextTurn = myRole === 'X' ? 'O' : 'X';
-        const winner = checkWinner(newBoard);
+        function initTouchControls() {
+            const joystick = document.getElementById('joystick-container');
+            const knob = document.getElementById('joystick-knob');
+            const lookArea = document.getElementById('touch-look-area');
 
-        const updatedState = {
-          board: newBoard,
-          turn: nextTurn,
-          winner: winner
+            if (!joystick || !lookArea) return;
+
+            // جوئی‌استیک حرکت سمت چپ
+            joystick.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                touchControls.joystickActive = true;
+                touchControls.joystickTouchId = touch.identifier;
+                const rect = joystick.getBoundingClientRect();
+                touchControls.joystickStart = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+
+                    // مدیریت حرکت جوئی‌استیک
+                    if (touchControls.joystickActive && touch.identifier === touchControls.joystickTouchId) {
+                        const dx = touch.clientX - touchControls.joystickStart.x;
+                        const dy = touch.clientY - touchControls.joystickStart.y;
+                        const dist = Math.min(Math.hypot(dx, dy), 40);
+                        const angle = Math.atan2(dy, dx);
+
+                        const knobX = Math.cos(angle) * dist;
+                        const knobY = Math.sin(angle) * dist;
+
+                        knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+                        touchControls.joystickMove = {
+                            x: knobX / 40,
+                            y: knobY / 40
+                        };
+                    }
+
+                    // مدیریت چرخاندن دوربین (سمت راست)
+                    if (touch.identifier === touchControls.lookTouchId) {
+                        const dx = touch.clientX - touchControls.lookStart.x;
+                        const dy = touch.clientY - touchControls.lookStart.y;
+
+                        const sensitivity = 0.005;
+                        mouseLook.yaw -= dx * sensitivity;
+                        mouseLook.pitch -= dy * sensitivity;
+                        mouseLook.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, mouseLook.pitch));
+
+                        touchControls.lookStart = { x: touch.clientX, y: touch.clientY };
+                    }
+                }
+            }, { passive: false });
+
+            const resetJoystick = (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const touch = e.changedTouches[i];
+                    if (touch.identifier === touchControls.joystickTouchId) {
+                        touchControls.joystickActive = false;
+                        touchControls.joystickTouchId = null;
+                        touchControls.joystickMove = { x: 0, y: 0 };
+                        knob.style.transform = `translate(0px, 0px)`;
+                    }
+                    if (touch.identifier === touchControls.lookTouchId) {
+                        touchControls.lookTouchId = null;
+                    }
+                }
+            };
+
+            window.addEventListener('touchend', resetJoystick);
+            window.addEventListener('touchcancel', resetJoystick);
+
+            // شروع لمس منطقه نگاه دوربین
+            lookArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                if (touchControls.lookTouchId === null) {
+                    touchControls.lookTouchId = touch.identifier;
+                    touchControls.lookStart = { x: touch.clientX, y: touch.clientY };
+                }
+            }, { passive: false });
+
+            // دکمه‌های لمسی اکشن
+            const fireBtn = document.getElementById('fire-btn');
+            const jumpBtn = document.getElementById('jump-btn');
+            const zoomBtn = document.getElementById('zoom-btn');
+            const reloadBtn = document.getElementById('reload-btn');
+
+            if (fireBtn) {
+                fireBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    shootWeapon();
+                    if (!touchControls.fireInterval) {
+                        touchControls.fireInterval = setInterval(() => {
+                            shootWeapon();
+                        }, 160);
+                    }
+                }, { passive: false });
+
+                fireBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    if (touchControls.fireInterval) {
+                        clearInterval(touchControls.fireInterval);
+                        touchControls.fireInterval = null;
+                    }
+                }, { passive: false });
+            }
+
+            if (jumpBtn) {
+                jumpBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (player.onGround) {
+                        player.velocity.y = player.jumpForce;
+                        player.onGround = false;
+                    }
+                }, { passive: false });
+            }
+
+            if (zoomBtn) {
+                zoomBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (camera.fov === 75) {
+                        camera.fov = 40;
+                    } else {
+                        camera.fov = 75;
+                    }
+                    camera.updateProjectionMatrix();
+                }, { passive: false });
+            }
+
+            if (reloadBtn) {
+                reloadBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    reloadWeapon();
+                }, { passive: false });
+            }
+        }
+
+        // --- بروزرسانی حرکت بازیکن ---
+        function updatePlayerMovement() {
+            if (!isGameStarted) return;
+
+            // کلید R برای تعویض خشاب
+            if (keys['KeyR']) {
+                reloadWeapon();
+            }
+
+            const moveDir = new THREE.Vector3();
+            const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), mouseLook.yaw);
+            const side = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), mouseLook.yaw);
+
+            // کیبورد
+            if (keys['KeyW']) moveDir.add(forward);
+            if (keys['KeyS']) moveDir.sub(forward);
+            if (keys['KeyD']) moveDir.add(side);
+            if (keys['KeyA']) moveDir.sub(side);
+
+            // جوئی‌استیک لمسی (موبایل)
+            if (touchControls.joystickMove.x !== 0 || touchControls.joystickMove.y !== 0) {
+                const joyX = touchControls.joystickMove.x;
+                const joyY = touchControls.joystickMove.y;
+
+                moveDir.add(forward.clone().multiplyScalar(-joyY));
+                moveDir.add(side.clone().multiplyScalar(joyX));
+            }
+
+            if (moveDir.length() > 0) {
+                moveDir.normalize().multiplyScalar(player.speed);
+
+                // فیزیک برخورد بازیکن با دیوارها
+                const nextPos = camera.position.clone().add(moveDir);
+                let canMove = true;
+
+                for (let obj of collidableObjects) {
+                    const expandedBox = obj.box.clone().expandByScalar(0.4); // شعاع بدن بازیکن
+                    if (expandedBox.containsPoint(new THREE.Vector3(nextPos.x, 1, nextPos.z))) {
+                        canMove = false;
+                        break;
+                    }
+                }
+
+                if (canMove) {
+                    camera.position.x = nextPos.x;
+                    camera.position.z = nextPos.z;
+                }
+            }
+
+            // پرش ساده
+            if (keys['Space'] && player.onGround) {
+                player.velocity.y = player.jumpForce;
+                player.onGround = false;
+            }
+
+            // جاذبه زمین
+            camera.position.y += player.velocity.y;
+            if (camera.position.y > player.height) {
+                player.velocity.y -= 0.01; // Gravity
+            } else {
+                camera.position.y = player.height;
+                player.velocity.y = 0;
+                player.onGround = true;
+            }
+        }
+
+        // --- افکت‌های صوتی ---
+        function playGunshotSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch(e){}
+        }
+
+        // --- بروزرسانی HUD و رادار ---
+        function updateHUD() {
+            document.getElementById('health-val').innerText = Math.max(0, Math.round(player.health));
+            document.getElementById('armor-val').innerText = player.armor;
+            document.getElementById('ammo-clip').innerText = player.ammoClip;
+            document.getElementById('ammo-reserve').innerText = player.ammoReserve;
+
+            document.getElementById('score-ct').innerText = `CT: ${ctScore}`;
+            document.getElementById('score-t').innerText = `T: ${tScore}`;
+        }
+
+        function updateRadar() {
+            const radarCanvas = document.getElementById('radar-canvas');
+            const ctx = radarCanvas.getContext('2d');
+            ctx.clearRect(0, 0, 140, 140);
+
+            const center = 70;
+            const scale = 0.8;
+
+            // موقعیت بازیکن در مرکز
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(center, center, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // رسم ربات‌ها روی رادار
+            bots.forEach(b => {
+                const relX = (b.mesh.position.x - camera.position.x) * scale;
+                const relZ = (b.mesh.position.z - camera.position.z) * scale;
+
+                if (Math.abs(relX) < 65 && Math.abs(relZ) < 65) {
+                    ctx.fillStyle = b.team === player.team ? '#3498db' : '#e74c3c';
+                    ctx.beginPath();
+                    ctx.arc(center + relX, center + relZ, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        function showKillFeed(msg) {
+            const feed = document.getElementById('kill-feed');
+            const item = document.createElement('div');
+            item.className = 'kill-message';
+            item.innerText = msg;
+            feed.appendChild(item);
+
+            setTimeout(() => item.remove(), 4000);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- حلقه اصلی بازی (Animate Loop) ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isGameStarted) {
+                updatePlayerMovement();
+                updateBotsAI();
+                updateBullets();
+                updateRadar();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // راه‌اندازی اولیه
+        window.onload = function() {
+            initEngine();
         };
-
-        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
-        await updateDoc(roomRef, { gameState: updatedState });
-      });
-    });
-
-    btnResetGame.addEventListener('click', async () => {
-      if (!currentRoomId) return;
-      const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
-      await updateDoc(roomRef, {
-        gameState: { board: Array(9).fill(''), turn: 'X', winner: null }
-      });
-    });
-
-    function updateGameBoardUI(state) {
-      currentGameState = state;
-      gameCells.forEach((cell, idx) => {
-        cell.innerText = state.board[idx];
-        if(state.board[idx] === 'X') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 h-20";
-        if(state.board[idx] === 'O') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center text-pink-400 h-20";
-        if(state.board[idx] === '') cell.className = "game-cell text-3xl font-extrabold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center justify-center text-indigo-400 transition h-20";
-      });
-
-      if (state.winner) {
-        if (state.winner === 'DRAW') {
-          gameTurnText.innerText = "بازی مساوی شد!";
-        } else {
-          gameTurnText.innerText = `برنده بازی: ${state.winner}`;
-          showToast(`بازیکن ${state.winner} برنده شد!`);
-        }
-      } else {
-        gameTurnText.innerText = state.turn === myRole ? "نوبت شماست!" : "نوبت مخاطب...";
-      }
-    }
-
-    function checkWinner(board) {
-      const wins = [
-        [0,1,2], [3,4,5], [6,7,8],
-        [0,3,6], [1,4,7], [2,5,8],
-        [0,4,8], [2,4,6]
-      ];
-      for (let w of wins) {
-        if (board[w[0]] && board[w[0]] === board[w[1]] && board[w[0]] === board[w[2]]) {
-          return board[w[0]];
-        }
-      }
-      if (board.every(c => c !== '')) return 'DRAW';
-      return null;
-    }
-
-    // ۶. نمایش امواج صوت بر روی بوم گرافیکی (Visualizer)
-    function setupVisualizer(stream, canvasId, color) {
-      const canvas = document.getElementById(canvasId);
-      const ctx = canvas.getContext('2d');
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyser = audioCtx.createAnalyser();
-
-      analyser.fftSize = 32;
-      source.connect(analyser);
-
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-
-      function draw() {
-        requestAnimationFrame(draw);
-        analyser.getByteFrequencyData(dataArray);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const barWidth = (canvas.width / bufferLength) * 1.5;
-        let x = 0;
-
-        for (let i = 0; i < bufferLength; i++) {
-          const barHeight = (dataArray[i] / 255) * canvas.height;
-          ctx.fillStyle = color;
-          ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
-          x += barWidth;
-        }
-      }
-      draw();
-    }
-
-    function updateStatus(text, color) {
-      statusText.innerText = text;
-      const dot = connectionStatus.querySelector('span');
-      dot.className = `w-3 h-3 rounded-full bg-${color}-500 animate-pulse`;
-    }
-
-  </script>
+    </script>
 </body>
 </html>
