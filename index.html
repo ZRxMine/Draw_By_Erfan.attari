@@ -682,16 +682,72 @@
         let particleEffects = [];
         let shellCasings = [];
 
+        function playRadioChirpSound() {
+            initAudioContext();
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            // Radio Walkie-Talkie sound effect
+            const bufferSize = audioCtx.sampleRate * 0.08;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1500, now);
+            filter.Q.setValueAtTime(3.0, now);
+
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.3, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            noise.start(now);
+
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 0.06);
+            oscGain.gain.setValueAtTime(0.2, now);
+            oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+            
+            osc.connect(oscGain);
+            oscGain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.06);
+        }
+
         function speakPersianAI(text) {
             try {
+                playRadioChirpSound();
                 if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'fa-IR';
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
-                    window.speechSynthesis.speak(utterance);
+                    setTimeout(() => {
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        const voices = window.speechSynthesis.getVoices();
+                        const faVoice = voices.find(v => v.lang.startsWith('fa') || v.lang.startsWith('FA'));
+                        
+                        if (faVoice) {
+                            utterance.voice = faVoice;
+                            utterance.lang = faVoice.lang;
+                        } else {
+                            utterance.lang = 'fa-IR';
+                        }
+                        
+                        utterance.rate = 1.0;
+                        utterance.pitch = 1.0;
+                        utterance.volume = 1.0;
+
+                        window.speechSynthesis.speak(utterance);
+                    }, 90);
                 }
             } catch(e) {
                 console.log("Speech synthesis error:", e);
@@ -1951,6 +2007,12 @@
 
         window.onload = function() {
             initEngine();
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.getVoices();
+                window.speechSynthesis.onvoiceschanged = () => {
+                    window.speechSynthesis.getVoices();
+                };
+            }
         };
     </script>
 </body>
